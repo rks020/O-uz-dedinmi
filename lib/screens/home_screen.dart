@@ -166,6 +166,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
      final transactions = ref.watch(monthlyTransactionsProvider);
      final expenseTransactions = transactions.where((t) => t.type == TransactionType.expense).toList();
      final isEmpty = expenseTransactions.isEmpty;
+     final selectedDate = ref.watch(selectedDateProvider);
 
      return SafeArea(
        child: Column(
