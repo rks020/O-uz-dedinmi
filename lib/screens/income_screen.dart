@@ -21,6 +21,7 @@ class IncomeScreen extends ConsumerWidget {
     
     final selectedDate = ref.watch(selectedDateProvider);
     final isAmountVisible = ref.watch(isAmountVisibleProvider);
+    final displayMode = ref.watch(displayModeProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
     final selectedDateNotifier = ref.read(selectedDateProvider.notifier);
     
@@ -32,15 +33,18 @@ class IncomeScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
-        title: Row(
-          children: [
-            const Text(
-              'Ev giderleri',
-              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 4),
-            Icon(Icons.keyboard_arrow_down, color: Colors.grey[400]),
-          ],
+        title: GestureDetector(
+          onTap: () {}, // Could implement account switcher later
+          child: Row(
+            children: [
+              const Text(
+                'Ev giderleri',
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 4),
+              Icon(Icons.keyboard_arrow_down, color: Colors.grey[400]),
+            ],
+          ),
         ),
         actions: [
           IconButton(
@@ -53,8 +57,11 @@ class IncomeScreen extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           IconButton(
-            icon: const Icon(Icons.calendar_today_outlined, color: Colors.blue),
-            onPressed: () {},
+            icon: Icon(
+              displayMode == TransactionDisplayMode.status ? Icons.calendar_today_outlined : Icons.sort, 
+              color: Colors.blue
+            ),
+            onPressed: () => ref.read(displayModeProvider.notifier).toggle(),
             style: IconButton.styleFrom(backgroundColor: AppTheme.surfaceColor, shape: const CircleBorder()),
           ),
           const SizedBox(width: 8),
@@ -139,12 +146,16 @@ class IncomeScreen extends ConsumerWidget {
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    // Grouped Sections (e.g., Paid)
-                    if (paidIncome > 0) ...[
-                      _buildStatusSection('Ödenen', paidIncome, incomeTransactions.where((t) => t.status == TransactionStatus.paid).toList()),
-                    ],
-                    if (incomeTransactions.any((t) => t.status != TransactionStatus.paid)) ...[
-                      _buildStatusSection('Bekleyen', totalIncome - paidIncome, incomeTransactions.where((t) => t.status != TransactionStatus.paid).toList()),
+                    if (displayMode == TransactionDisplayMode.status) ...[
+                      if (paidIncome > 0) ...[
+                        _buildStatusSection('Ödenen', paidIncome, incomeTransactions.where((t) => t.status == TransactionStatus.paid).toList(), isAmountVisible),
+                      ],
+                      if (incomeTransactions.any((t) => t.status != TransactionStatus.paid)) ...[
+                        _buildStatusSection('Bekleyen', totalIncome - paidIncome, incomeTransactions.where((t) => t.status != TransactionStatus.paid).toList(), isAmountVisible),
+                      ],
+                    ] else ...[
+                      // Multi-Category View
+                      ..._buildCategorySections(incomeTransactions, categoriesAsync.value ?? [], isAmountVisible),
                     ],
                     
                     const SizedBox(height: 24),
@@ -169,8 +180,26 @@ class IncomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusSection(String title, double amount, List<Transaction> transactions) {
+  List<Widget> _buildCategorySections(List<Transaction> transactions, List<AppCategory> categories, bool isVisible) {
+    final Map<String, List<Transaction>> grouped = {};
+    for (var t in transactions) {
+      grouped.putIfAbsent(t.categoryId, () => []).add(t);
+    }
+
+    return grouped.entries.map((entry) {
+      final category = categories.firstWhere(
+        (c) => c.id == entry.key,
+        orElse: () => AppCategory(id: 'other', name: 'Diğer', colorValue: Colors.grey.value, type: CategoryType.both),
+      );
+      final total = entry.value.fold(0.0, (sum, t) => sum + t.amount);
+      return _buildStatusSection(category.name, total, entry.value, isVisible);
+    }).toList();
+  }
+
+  Widget _buildStatusSection(String title, double amount, List<Transaction> transactions, bool isVisible) {
      final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+     final remainingInGroup = transactions.where((t) => t.status != TransactionStatus.paid).fold(0.0, (sum, t) => sum + t.amount);
+     
      return Container(
        margin: const EdgeInsets.only(bottom: 16),
        decoration: BoxDecoration(
@@ -182,8 +211,36 @@ class IncomeScreen extends ConsumerWidget {
          data: ThemeData.dark().copyWith(dividerColor: Colors.transparent),
          child: ExpansionTile(
            initiallyExpanded: true,
-           title: Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-           subtitle: Text(currencyFormat.format(amount), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+           title: Container(
+             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+             decoration: BoxDecoration(
+               color: Colors.white.withOpacity(0.05),
+               borderRadius: BorderRadius.circular(8),
+             ),
+             child: Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+           ),
+           subtitle: Padding(
+             padding: const EdgeInsets.only(top: 8),
+             child: Row(
+               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+               children: [
+                 Text(
+                   isVisible ? currencyFormat.format(amount) : '******₺', 
+                   style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
+                 ),
+                 Column(
+                   crossAxisAlignment: CrossAxisAlignment.end,
+                   children: [
+                     const Text('Kalan Gelir', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                     Text(
+                       isVisible ? currencyFormat.format(remainingInGroup) : '******₺', 
+                       style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)
+                     ),
+                   ],
+                 ),
+               ],
+             ),
+           ),
            children: transactions.map<Widget>((t) => TransactionItem(transaction: t)).toList(),
          ),
        ),
