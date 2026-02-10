@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 
@@ -34,11 +35,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _passwordController.text.trim(),
       );
       if (mounted) Navigator.pop(context);
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        switch (e.code) {
+          case 'email-already-in-use':
+            _errorMessage = 'Bu e-posta adresi zaten kullanımda.';
+            break;
+          case 'invalid-email':
+            _errorMessage = 'Geçersiz e-posta adresi.';
+            break;
+          case 'weak-password':
+            _errorMessage = 'Şifre çok zayıf. Daha güçlü bir şifre deneyin.';
+            break;
+          case 'operation-not-allowed':
+            _errorMessage = 'E-posta/Şifre girişi etkin değil.';
+            break;
+          default:
+            _errorMessage = 'Kayıt olurken bir hata oluştu.';
+        }
+      });
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().contains('email-already-in-use') 
-            ? 'Bu e-posta zaten kullanımda.' 
-            : 'Bir hata oluştu: $e';
+        _errorMessage = 'Beklenmedik bir hata oluştu.';
       });
     } finally {
       if (mounted) {

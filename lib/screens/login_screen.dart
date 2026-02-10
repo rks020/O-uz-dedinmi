@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import 'register_screen.dart';
@@ -28,13 +29,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        switch (e.code) {
+          case 'user-not-found':
+            _errorMessage = 'Kullanıcı bulunamadı.';
+            break;
+          case 'wrong-password':
+            _errorMessage = 'Hatalı şifre.';
+            break;
+          case 'invalid-email':
+            _errorMessage = 'Geçersiz e-posta adresi.';
+            break;
+          case 'user-disabled':
+            _errorMessage = 'Bu hesap devre dışı bırakılmış.';
+            break;
+          case 'invalid-credential':
+            _errorMessage = 'E-posta veya şifre hatalı.';
+            break;
+          default:
+            _errorMessage = 'Giriş yapılırken bir hata oluştu.';
+        }
+      });
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().contains('user-not-found') 
-            ? 'Kullanıcı bulunamadı.' 
-            : e.toString().contains('wrong-password')
-                ? 'Hatalı şifre.'
-                : 'Bir hata oluştu: $e';
+        _errorMessage = 'Beklenmedik bir hata oluştu.';
       });
     } finally {
       if (mounted) {
