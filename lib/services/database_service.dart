@@ -3,24 +3,29 @@ import 'package:firebase_database/firebase_database.dart';
 import '../models/transaction.dart' as model;
 
 class DatabaseService {
-  final DatabaseReference _db = FirebaseDatabase.instance.ref();
+  final String userId;
+  late final DatabaseReference _userRef;
+
+  DatabaseService(this.userId) {
+    _userRef = FirebaseDatabase.instance.ref().child('users').child(userId);
+  }
 
   // --- Transactions ---
 
   Future<void> addTransaction(model.Transaction txn) async {
-    await _db.child('transactions').child(txn.id).set(txn.toMap());
+    await _userRef.child('transactions').child(txn.id).set(txn.toMap());
   }
 
   Future<void> updateTransaction(model.Transaction txn) async {
-    await _db.child('transactions').child(txn.id).update(txn.toMap());
+    await _userRef.child('transactions').child(txn.id).update(txn.toMap());
   }
 
   Future<void> deleteTransaction(String id) async {
-    await _db.child('transactions').child(id).remove();
+    await _userRef.child('transactions').child(id).remove();
   }
 
   Stream<List<model.Transaction>> get transactionsStream {
-    return _db.child('transactions').onValue.map((event) {
+    return _userRef.child('transactions').onValue.map((event) {
       final snapshot = event.snapshot;
       if (snapshot.value == null) return [];
 
@@ -44,15 +49,15 @@ class DatabaseService {
 
   Future<void> createGroup(Map<String, dynamic> groupData) async {
     final id = groupData['id'];
-    await _db.child('groups').child(id).set(groupData);
+    await _userRef.child('groups').child(id).set(groupData);
   }
 
   Future<void> deleteGroup(String id) async {
-    await _db.child('groups').child(id).remove();
+    await _userRef.child('groups').child(id).remove();
   }
 
   Stream<List<Map<String, dynamic>>> get groupsStream {
-    return _db.child('groups').onValue.map((event) {
+    return _userRef.child('groups').onValue.map((event) {
       final snapshot = event.snapshot;
       if (snapshot.value == null) return [];
 
@@ -76,11 +81,11 @@ class DatabaseService {
 
   Future<void> addCategory(Map<String, dynamic> categoryData) async {
     final id = categoryData['id'];
-    await _db.child('categories').child(id).set(categoryData);
+    await _userRef.child('categories').child(id).set(categoryData);
   }
 
   Stream<List<Map<String, dynamic>>> get categoriesStream {
-    return _db.child('categories').onValue.map((event) {
+    return _userRef.child('categories').onValue.map((event) {
       final snapshot = event.snapshot;
       if (snapshot.value == null) return [];
 

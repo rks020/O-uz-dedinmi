@@ -3,26 +3,48 @@ import '../models/transaction.dart';
 import '../models/group.dart';
 import '../models/category.dart';
 import '../services/database_service.dart';
+import '../services/auth_service.dart';
 
-final databaseServiceProvider = Provider<DatabaseService>((ref) => DatabaseService());
+final databaseServiceProvider = Provider<DatabaseService>((ref) {
+  final authUser = ref.watch(authStateProvider).value;
+  if (authUser == null) {
+    // If not logged in, we return a dummy or handle it in the consumer.
+    // Given the AuthWrapper, this provider will only be active when logged in.
+    return DatabaseService('guest'); 
+  }
+  return DatabaseService(authUser.uid);
+});
 
 final transactionsProvider = StreamProvider<List<Transaction>>((ref) {
+  final authState = ref.watch(authStateProvider);
+  if (authState.value == null) return Stream.value([]);
+  
   final dbService = ref.watch(databaseServiceProvider);
   return dbService.transactionsStream;
 });
 
 final groupsProvider = StreamProvider<List<Group>>((ref) {
+  final authState = ref.watch(authStateProvider);
+  if (authState.value == null) return Stream.value([]);
+
   final dbService = ref.watch(databaseServiceProvider);
   return dbService.groupsStream.map((items) => items.map(Group.fromMap).toList());
 });
 
 final categoriesProvider = StreamProvider<List<AppCategory>>((ref) {
+  final authState = ref.watch(authStateProvider);
+  if (authState.value == null) return Stream.value([]);
+
   final dbService = ref.watch(databaseServiceProvider);
   return dbService.categoriesStream.map((items) => items.map(AppCategory.fromMap).toList());
 });
 
 // Helper for CRUD operations (since StreamProvider is read-only)
 final transactionsControllerProvider = Provider<TransactionsController>((ref) {
+  final authState = ref.watch(authStateProvider);
+  if (authState.value == null) {
+    return TransactionsController(DatabaseService('guest'));
+  }
   return TransactionsController(ref.watch(databaseServiceProvider));
 });
 
