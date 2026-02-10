@@ -243,11 +243,11 @@ class TemplateDetailScreen extends ConsumerWidget {
 
   String _getRepeatText(RecurrenceType repeat) {
     switch (repeat) {
-      case RecurrenceType.monthly: return 'Aylık';
-      case RecurrenceType.weekly: return 'Haftalık';
+      case RecurrenceType.everyMonth: return 'Aylık';
+      case RecurrenceType.everyWeek: return 'Haftalık';
       case RecurrenceType.once: return 'Tek seferlik';
-      // Add more as needed based on the design (e.g., "Üç aylık")
-      default: return 'Tekrarlı';
+      case RecurrenceType.everyThreeMonths: return 'Üç aylık';
+      default: return repeat.label;
     }
   }
 }

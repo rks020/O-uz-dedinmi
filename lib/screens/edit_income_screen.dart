@@ -159,7 +159,7 @@ class _EditIncomeScreenState extends ConsumerState<EditIncomeScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                    Text(
-                    _repeat == RecurrenceType.monthly ? 'Her 3 ayda bir' : _repeat.label, // Following image example
+                    _repeat.label,
                     style: const TextStyle(color: Colors.white),
                   ),
                   const SizedBox(width: 4),
