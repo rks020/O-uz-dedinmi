@@ -48,98 +48,64 @@ class TransactionItem extends ConsumerWidget {
     return GestureDetector(
       onTap: () => TransactionDetailsSheet.show(context, transaction),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isOverdue ? const Color(0xFF2C1E21) : AppTheme.surfaceColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          color: Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            // Top row: Label and Kalan Label
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  topLabel,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-                const Text(
-                  'Kalan',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
+            // Category Color Dot
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: Color(category.colorValue),
+                shape: BoxShape.circle,
+              ),
             ),
-            const SizedBox(height: 4),
-            // Middle row: Amount and Remaining Amount
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  formatAmount(transaction.amount),
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            const SizedBox(width: 12),
+            // Status Icon Button
+            GestureDetector(
+              onTap: () {
+                final newStatus = isPaid ? TransactionStatus.pending : TransactionStatus.paid;
+                ref.read(transactionsControllerProvider).updateTransaction(
+                  transaction.copyWith(status: newStatus),
+                );
+              },
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  shape: BoxShape.circle,
                 ),
-                Text(
-                  isPaid ? formatAmount(0) : formatAmount(transaction.amount),
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
+                child: Icon(centerIcon, color: iconColor, size: 16),
+              ),
             ),
-            const SizedBox(height: 12),
-            Divider(color: Colors.white.withOpacity(0.05), height: 1),
-            const SizedBox(height: 12),
-            // Bottom row: Indicator, Button, Title, Date
-            Row(
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: isPaid ? AppTheme.incomeGreen : AppTheme.expenseRed,
-                    shape: BoxShape.circle,
+            const SizedBox(width: 12),
+            // Title and Amount
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    transaction.title,
+                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
                   ),
-                ),
-                const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: () {
-                    final newStatus = isPaid ? TransactionStatus.pending : TransactionStatus.paid;
-                    ref.read(transactionsControllerProvider).updateTransaction(
-                      transaction.copyWith(status: newStatus),
-                    );
-                  },
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: iconBgColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(centerIcon, color: iconColor, size: 20),
+                  const SizedBox(height: 2),
+                  Text(
+                    formatAmount(transaction.amount),
+                    style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        transaction.title,
-                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        formatAmount(transaction.amount),
-                        style: const TextStyle(color: Colors.grey, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  dateFormat.format(transaction.date),
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
+                ],
+              ),
+            ),
+            // Date
+            Text(
+              dateFormat.format(transaction.date),
+              style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 12),
             ),
           ],
         ),

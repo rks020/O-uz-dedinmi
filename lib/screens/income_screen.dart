@@ -204,43 +204,48 @@ class IncomeScreen extends ConsumerWidget {
        margin: const EdgeInsets.only(bottom: 16),
        decoration: BoxDecoration(
          color: AppTheme.surfaceColor.withOpacity(0.5),
-         borderRadius: BorderRadius.circular(20),
+         borderRadius: BorderRadius.circular(24),
          border: Border.all(color: Colors.white.withOpacity(0.05)),
        ),
        child: Theme(
-         data: ThemeData.dark().copyWith(dividerColor: Colors.transparent),
+         data: ThemeData.dark().copyWith(
+           dividerColor: Colors.transparent,
+           splashColor: Colors.transparent,
+           highlightColor: Colors.transparent,
+         ),
          child: ExpansionTile(
            initiallyExpanded: true,
-           title: Container(
-             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-             decoration: BoxDecoration(
-               color: Colors.white.withOpacity(0.05),
-               borderRadius: BorderRadius.circular(8),
-             ),
-             child: Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+           tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+           title: Row(
+             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+             children: [
+               Text(
+                 title, 
+                 style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13, fontWeight: FontWeight.w500)
+               ),
+               Text(
+                 'Kalan Gelir', 
+                 style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13, fontWeight: FontWeight.w500)
+               ),
+             ],
            ),
            subtitle: Padding(
-             padding: const EdgeInsets.only(top: 8),
+             padding: const EdgeInsets.only(top: 4),
              child: Row(
                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                children: [
                  Text(
                    isVisible ? currencyFormat.format(amount) : '******₺', 
-                   style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
+                   style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)
                  ),
-                 Column(
-                   crossAxisAlignment: CrossAxisAlignment.end,
-                   children: [
-                     const Text('Kalan Gelir', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                     Text(
-                       isVisible ? currencyFormat.format(remainingInGroup) : '******₺', 
-                       style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)
-                     ),
-                   ],
+                 Text(
+                   isVisible ? currencyFormat.format(remainingInGroup) : '******₺', 
+                   style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)
                  ),
                ],
              ),
            ),
+           childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
            children: transactions.map<Widget>((t) => TransactionItem(transaction: t)).toList(),
          ),
        ),
