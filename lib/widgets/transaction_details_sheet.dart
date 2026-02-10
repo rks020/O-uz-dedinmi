@@ -7,6 +7,8 @@ import '../models/transaction_options.dart';
 import '../providers/data_provider.dart';
 import '../theme/app_theme.dart';
 import 'dart:ui';
+import '../screens/template_detail_screen.dart';
+import '../screens/edit_income_screen.dart';
 
 class TransactionDetailsSheet extends ConsumerStatefulWidget {
   final Transaction transaction;
@@ -140,6 +142,16 @@ class _TransactionDetailsSheetState extends ConsumerState<TransactionDetailsShee
                               Navigator.pop(context);
                             } else if (value == 'complete') {
                               _completePayment();
+                            } else if (value == 'template_view') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => TemplateDetailScreen(transaction: _tx)),
+                              );
+                            } else if (value == 'template_edit') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => EditIncomeScreen(transaction: _tx)),
+                              );
                             }
                           },
                           itemBuilder: (context) => [
