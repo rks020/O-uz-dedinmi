@@ -190,18 +190,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ],
                     ),
                   ),
-                 Row(
+                Row(
                    children: [
                      IconButton(
-                       icon: const Icon(Icons.visibility_outlined, color: AppTheme.primaryColor),
-                       onPressed: () {},
+                       icon: Icon(
+                         ref.watch(isAmountVisibleProvider) ? Icons.visibility_outlined : Icons.visibility_off_outlined, 
+                         color: AppTheme.primaryColor
+                       ),
+                       onPressed: () => ref.read(isAmountVisibleProvider.notifier).state = !ref.read(isAmountVisibleProvider),
                        style: IconButton.styleFrom(backgroundColor: AppTheme.surfaceColor, shape: const CircleBorder()),
                      ),
                      const SizedBox(width: 8),
                      IconButton(
+                       icon: const Icon(Icons.sort, color: AppTheme.primaryColor),
+                       onPressed: () => ref.read(displayModeProvider.notifier).state = TransactionDisplayMode.category,
+                       style: IconButton.styleFrom(
+                         backgroundColor: ref.watch(displayModeProvider) == TransactionDisplayMode.category 
+                             ? AppTheme.primaryColor.withOpacity(0.2) 
+                             : AppTheme.surfaceColor, 
+                         shape: const CircleBorder()
+                       ),
+                     ),
+                     const SizedBox(width: 8),
+                     IconButton(
                        icon: const Icon(Icons.calendar_today_outlined, color: AppTheme.primaryColor),
-                       onPressed: () {},
-                       style: IconButton.styleFrom(backgroundColor: AppTheme.surfaceColor, shape: const CircleBorder()),
+                       onPressed: () => ref.read(displayModeProvider.notifier).state = TransactionDisplayMode.status,
+                       style: IconButton.styleFrom(
+                         backgroundColor: ref.watch(displayModeProvider) == TransactionDisplayMode.status 
+                             ? AppTheme.primaryColor.withOpacity(0.2) 
+                             : AppTheme.surfaceColor, 
+                         shape: const CircleBorder()
+                       ),
                      ),
                      const SizedBox(width: 8),
                      IconButton(
@@ -294,6 +313,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     color: const Color(0xFF2C1E21),
                     currencyFormat: currencyFormat,
                     isOverdue: true,
+                    isVisible: ref.watch(isAmountVisibleProvider),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -307,6 +327,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         amount: totalExpense,
                         color: AppTheme.surfaceColor,
                         currencyFormat: currencyFormat,
+                        isVisible: ref.watch(isAmountVisibleProvider),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -316,6 +337,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         amount: remainingExpense,
                         color: AppTheme.surfaceColor,
                         currencyFormat: currencyFormat,
+                        isVisible: ref.watch(isAmountVisibleProvider),
                       ),
                     ),
                   ],
@@ -352,6 +374,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required Color color,
     required NumberFormat currencyFormat,
     bool isOverdue = false,
+    bool isVisible = true,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -378,7 +401,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                currencyFormat.format(amount),
+                isVisible ? currencyFormat.format(amount) : '******${currencyFormat.symbols['CURRENCY_SYMBOL']}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,

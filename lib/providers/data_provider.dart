@@ -101,3 +101,8 @@ final overdueAmountProvider = Provider<double>((ref) {
           t.type == TransactionType.expense)
       .fold(0.0, (sum, t) => sum + t.amount);
 });
+
+enum TransactionDisplayMode { status, category }
+
+final isAmountVisibleProvider = StateProvider<bool>((ref) => true);
+final displayModeProvider = StateProvider<TransactionDisplayMode>((ref) => TransactionDisplayMode.category);

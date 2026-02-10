@@ -21,6 +21,8 @@ class TransactionItem extends ConsumerWidget {
 
     final isPaid = transaction.status == TransactionStatus.paid;
     final isOverdue = transaction.status == TransactionStatus.overdue;
+    final isVisible = ref.watch(isAmountVisibleProvider);
+    final displayMode = ref.watch(displayModeProvider);
     
     final statusColor = isPaid ? AppTheme.incomeGreen : AppTheme.expenseRed;
     final centerIcon = isPaid ? Icons.check : Icons.close;
@@ -30,6 +32,17 @@ class TransactionItem extends ConsumerWidget {
     final dateFormat = DateFormat('d MMM', 'tr_TR');
     final amountSymbol = AppCurrency.getSymbol(transaction.currencyCode);
     final amountFormat = NumberFormat.currency(locale: 'tr_TR', symbol: amountSymbol, decimalDigits: 0);
+
+    String topLabel;
+    if (displayMode == TransactionDisplayMode.category) {
+      topLabel = category.name;
+    } else {
+      topLabel = isPaid ? 'Ödenen' : 'Geciken';
+    }
+
+    String formatAmount(double value) {
+      return isVisible ? amountFormat.format(value) : '******$amountSymbol';
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -42,12 +55,12 @@ class TransactionItem extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row: Category and Kalan Label
+          // Top row: Label and Kalan Label
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                category.name,
+                topLabel,
                 style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
               const Text(
@@ -62,11 +75,11 @@ class TransactionItem extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                amountFormat.format(transaction.amount),
+                formatAmount(transaction.amount),
                 style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
               Text(
-                isPaid ? amountFormat.format(0) : amountFormat.format(transaction.amount),
+                isPaid ? formatAmount(0) : formatAmount(transaction.amount),
                 style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
@@ -113,7 +126,7 @@ class TransactionItem extends ConsumerWidget {
                       style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                     ),
                     Text(
-                      amountFormat.format(transaction.amount),
+                      formatAmount(transaction.amount),
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
