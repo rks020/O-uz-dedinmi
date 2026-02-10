@@ -4,6 +4,8 @@ import '../models/group.dart';
 import '../models/category.dart';
 import '../services/database_service.dart';
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
+import '../services/currency_service.dart';
 
 final databaseServiceProvider = Provider<DatabaseService>((ref) {
   final authUser = ref.watch(authStateProvider).value;
@@ -55,20 +57,53 @@ class TransactionsController {
 
   Future<void> addTransaction(Transaction t) async {
     await _dbService.addTransaction(t);
+    if (t.notificationEnabled) {
+      await _scheduleReminder(t);
+    }
   }
 
   Future<void> removeTransaction(String id) async {
     await _dbService.deleteTransaction(id);
+    NotificationService().cancelNotification(id.hashCode);
   }
 
   Future<void> updateTransaction(Transaction t) async {
     await _dbService.updateTransaction(t);
+    
+    // Cancel old notification
+    NotificationService().cancelNotification(t.id.hashCode);
+    
+    // Schedule new if enabled and pending
+    if (t.notificationEnabled && t.status == TransactionStatus.pending) {
+      await _scheduleReminder(t);
+    }
   }
 
   Future<void> deleteTransaction(String id) async {
     await _dbService.deleteTransaction(id);
+    NotificationService().cancelNotification(id.hashCode);
   }
 
+  Future<void> _scheduleReminder(Transaction t) async {
+    // Schedule for 1 day before at 09:00
+    final scheduledDate = t.date.subtract(const Duration(days: 1));
+    final reminderDate = DateTime(
+      scheduledDate.year,
+      scheduledDate.month,
+      scheduledDate.day,
+      9, 0, 0
+    );
+
+    if (reminderDate.isAfter(DateTime.now())) {
+      await NotificationService().scheduleNotification(
+        id: t.id.hashCode,
+        title: 'Ödeme Hatırlatması',
+        body: '${t.title} için ödeme tarihine 1 gün kaldı.',
+        scheduledDate: reminderDate,
+      );
+    }
+  }
+  
   Future<void> createGroup(Group group) async {
     await _dbService.createGroup(group.toMap());
   }
@@ -109,14 +144,14 @@ final monthlyIncomeProvider = Provider<double>((ref) {
   final transactions = ref.watch(monthlyTransactionsProvider);
   return transactions
       .where((t) => t.type == TransactionType.income)
-      .fold(0.0, (sum, t) => sum + t.amount);
+      .fold(0.0, (sum, t) => sum + CurrencyService.convertToTry(t.amount, t.currencyCode));
 });
 
 final monthlyExpenseProvider = Provider<double>((ref) {
   final transactions = ref.watch(monthlyTransactionsProvider);
   return transactions
       .where((t) => t.type == TransactionType.expense)
-      .fold(0.0, (sum, t) => sum + t.amount);
+      .fold(0.0, (sum, t) => sum + CurrencyService.convertToTry(t.amount, t.currencyCode));
 });
 
 final overdueAmountProvider = Provider<double>((ref) {
@@ -125,7 +160,7 @@ final overdueAmountProvider = Provider<double>((ref) {
       .where((t) =>
           t.status == TransactionStatus.overdue &&
           t.type == TransactionType.expense)
-      .fold(0.0, (sum, t) => sum + t.amount);
+      .fold(0.0, (sum, t) => sum + CurrencyService.convertToTry(t.amount, t.currencyCode));
 });
 
 enum TransactionDisplayMode { status, category }

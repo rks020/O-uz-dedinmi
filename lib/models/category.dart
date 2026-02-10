@@ -6,6 +6,7 @@ class AppCategory {
   final int colorValue; // Hex
   final String? iconCodePoint; // Material Icon code
   final CategoryType type;
+  final double? budgetLimit; // Added budget limit
 
   AppCategory({
     required this.id,
@@ -13,6 +14,7 @@ class AppCategory {
     required this.colorValue,
     this.iconCodePoint,
     required this.type,
+    this.budgetLimit,
   });
 
   Map<String, dynamic> toMap() {
@@ -22,6 +24,7 @@ class AppCategory {
       'colorValue': colorValue,
       'iconCodePoint': iconCodePoint,
       'type': type.name,
+      'budgetLimit': budgetLimit,
     };
   }
 
@@ -35,6 +38,7 @@ class AppCategory {
         (e) => e.name == map['type'],
         orElse: () => CategoryType.expense,
       ),
+      budgetLimit: (map['budgetLimit'] as num?)?.toDouble(),
     );
   }
 }

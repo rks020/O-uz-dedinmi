@@ -7,6 +7,7 @@ import 'screens/main_screen.dart';
 import 'services/auth_service.dart';
 import 'screens/login_screen.dart';
 
+import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -16,6 +17,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await NotificationService().initialize();
   
   // Optional: Initialize DB structure (categories) on first run
   // await DatabaseService().initializeCategories();

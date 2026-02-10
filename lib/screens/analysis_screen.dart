@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/data_provider.dart';
+import '../services/currency_service.dart';
 import '../theme/app_theme.dart';
 import '../models/transaction.dart';
 import '../models/category.dart';
@@ -142,19 +143,19 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
         final currentMonthTransactions = transactions.where((t) => t.date.year == selectedDate.year && t.date.month == selectedDate.month).toList();
         final categories = categoriesAsync.value ?? [];
 
-        final income = currentMonthTransactions.where((t) => t.type == TransactionType.income).fold(0.0, (sum, t) => sum + t.amount);
-        final expenses = currentMonthTransactions.where((t) => t.type == TransactionType.expense).fold(0.0, (sum, t) => sum + t.amount);
+        final income = currentMonthTransactions.where((t) => t.type == TransactionType.income).fold(0.0, (sum, t) => sum + CurrencyService.convertToTry(t.amount, t.currencyCode));
+        final expenses = currentMonthTransactions.where((t) => t.type == TransactionType.expense).fold(0.0, (sum, t) => sum + CurrencyService.convertToTry(t.amount, t.currencyCode));
 
         // Group income by categories
         final Map<String, double> incomeMap = {};
         for (var t in currentMonthTransactions.where((t) => t.type == TransactionType.income)) {
-          incomeMap[t.categoryId] = (incomeMap[t.categoryId] ?? 0) + t.amount;
+          incomeMap[t.categoryId] = (incomeMap[t.categoryId] ?? 0) + CurrencyService.convertToTry(t.amount, t.currencyCode);
         }
 
         // Group expenses by categories (or just show 'Giderler' if many)
         final Map<String, double> expenseMap = {};
         for (var t in currentMonthTransactions.where((t) => t.type == TransactionType.expense)) {
-          expenseMap[t.categoryId] = (expenseMap[t.categoryId] ?? 0) + t.amount;
+          expenseMap[t.categoryId] = (expenseMap[t.categoryId] ?? 0) + CurrencyService.convertToTry(t.amount, t.currencyCode);
         }
         
         final List<CategoryVolume> incomeBreakdown = incomeMap.entries.map((e) {
@@ -232,11 +233,11 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
 
           final income = monthTransactions
               .where((t) => t.type == TransactionType.income)
-              .fold(0.0, (sum, t) => sum + t.amount);
+              .fold(0.0, (sum, t) => sum + CurrencyService.convertToTry(t.amount, t.currencyCode));
           
           final expense = monthTransactions
               .where((t) => t.type == TransactionType.expense)
-              .fold(0.0, (sum, t) => sum + t.amount);
+              .fold(0.0, (sum, t) => sum + CurrencyService.convertToTry(t.amount, t.currencyCode));
 
           if (income > maxVal) maxVal = income;
           if (expense > maxVal) maxVal = expense;
@@ -447,8 +448,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     double totalAmount = 0;
 
     for (var t in transactions) {
-      categoryTotals[t.categoryId] = (categoryTotals[t.categoryId] ?? 0) + t.amount;
-      totalAmount += t.amount;
+      final converted = CurrencyService.convertToTry(t.amount, t.currencyCode);
+      categoryTotals[t.categoryId] = (categoryTotals[t.categoryId] ?? 0) + converted;
+      totalAmount += converted;
     }
 
     final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
@@ -458,42 +460,86 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
         (c) => c.id == entry.key,
         orElse: () => AppCategory(id: 'other', name: 'Diğer', colorValue: Colors.grey.value, type: CategoryType.both),
       );
-      final percentage = (entry.value / totalAmount * 100).toInt();
+      final amount = entry.value;
+      final percentageOfTotal = totalAmount > 0 ? (amount / totalAmount * 100).toInt() : 0;
+      
+      double? budgetProgress;
+      Color progressColor = category.colorValue != 0 ? Color(category.colorValue) : AppTheme.primaryColor;
+      
+      if (category.budgetLimit != null && category.budgetLimit! > 0) {
+        budgetProgress = (amount / category.budgetLimit!).clamp(0.0, 1.0);
+        if (amount > category.budgetLimit!) {
+          progressColor = AppTheme.expenseRed; // Over budget
+        } else if (budgetProgress > 0.8) {
+          progressColor = Colors.orange; // Warning
+        }
+      }
 
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
-        child: Row(
+        child: Column(
           children: [
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: Color(category.colorValue),
-                borderRadius: BorderRadius.circular(3),
+            Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: Color(category.colorValue),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        category.name,
+                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+                      ),
+                      if (category.budgetLimit != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            'Limit: ${currencyFormat.format(category.budgetLimit)}',
+                             style: TextStyle(
+                              color: amount > category.budgetLimit! ? AppTheme.expenseRed : Colors.grey,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      currencyFormat.format(amount),
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '$percentageOfTotal%',
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            if (budgetProgress != null) ...[
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: budgetProgress,
+                  backgroundColor: Colors.white.withOpacity(0.1),
+                  valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                  minHeight: 4,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '$percentage%',
-                style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              category.name,
-              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
-            ),
-            const Spacer(),
-            Text(
-              currencyFormat.format(entry.value),
-              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            ],
           ],
         ),
       );

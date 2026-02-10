@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
+import 'search_transaction_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -30,7 +31,12 @@ class SettingsScreen extends ConsumerWidget {
               ),
               child: IconButton(
                 icon: const Icon(Icons.search, color: Colors.blue, size: 24),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SearchTransactionScreen()),
+                  );
+                },
               ),
             ),
           ),

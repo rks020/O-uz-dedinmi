@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../models/transaction.dart';
 import '../../models/category.dart';
@@ -33,6 +35,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   bool _notificationsEnabled = true;
   String? _selectedCategoryId;
   String _currencyCode = 'TRY';
+  File? _receiptImage;
+
+  Future<void> _pickReceipt() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _receiptImage = File(pickedFile.path);
+      });
+    }
+  }
 
   void _showCurrencyPicker() {
     Navigator.push(
@@ -95,6 +108,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   isFinite: _isFinite,
                   notificationEnabled: _notificationsEnabled,
                   currencyCode: _currencyCode,
+                  receiptPath: _receiptImage?.path,
                 );
                 widget.onAdd(transaction);
                 Navigator.pop(context);
@@ -223,7 +237,6 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                ...widget.categories.map((cat) => _buildCategoryChip(cat)),
                 ActionChip(
                   label: const Text('Ekle'),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -233,7 +246,68 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   onPressed: widget.onAddCategory,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
+                ...(() {
+                  final unique = <String, AppCategory>{};
+                  for (var cat in widget.categories) {
+                    final key = cat.name.toLowerCase().trim();
+                    if (!unique.containsKey(key)) {
+                      unique[key] = cat;
+                    }
+                  }
+                  return unique.values.map((cat) => _buildCategoryChip(cat));
+                })(),
               ],
+            ),
+            const SizedBox(height: 24),
+            const Text('FİŞ / FATURA', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: _pickReceipt,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E1E),
+                   borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: _receiptImage != null 
+                          ? ClipOval(child: Image.file(_receiptImage!, fit: BoxFit.cover))
+                          : const Icon(Icons.receipt_long, color: AppTheme.primaryColor),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Fiş / Fatura Ekle',
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                           if (_receiptImage != null)
+                            const Text(
+                              'Görüntü seçildi. Değiştirmek için dokunun.',
+                              style: TextStyle(color: Colors.green, fontSize: 12),
+                            )
+                          else
+                            Text(
+                              'Fotoğraf çekin veya galeriden seçin',
+                              style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.camera_alt_outlined, color: Colors.grey),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

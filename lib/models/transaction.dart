@@ -47,6 +47,7 @@ class Transaction {
   final bool notificationEnabled;
   final String currencyCode;
   final List<PaymentRecord> partialPayments;
+  final String? receiptPath; // Added receipt path
 
   Transaction({
     required this.id,
@@ -64,6 +65,7 @@ class Transaction {
     this.notificationEnabled = false,
     this.currencyCode = 'TRY',
     this.partialPayments = const [],
+    this.receiptPath,
   });
 
   double get paidAmount => partialPayments.fold(0, (sum, p) => sum + p.amount);
@@ -86,6 +88,7 @@ class Transaction {
       'notificationEnabled': notificationEnabled,
       'currencyCode': currencyCode,
       'partialPayments': partialPayments.map((p) => p.toMap()).toList(),
+      'receiptPath': receiptPath,
     };
   }
 
@@ -118,6 +121,7 @@ class Transaction {
               ?.map((p) => PaymentRecord.fromMap(Map<String, dynamic>.from(p)))
               .toList() ??
           [],
+      receiptPath: map['receiptPath'],
     );
   }
 
@@ -137,6 +141,7 @@ class Transaction {
     bool? notificationEnabled,
     String? currencyCode,
     List<PaymentRecord>? partialPayments,
+    String? receiptPath,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -154,6 +159,8 @@ class Transaction {
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
       currencyCode: currencyCode ?? this.currencyCode,
       partialPayments: partialPayments ?? this.partialPayments,
+      receiptPath: receiptPath ?? this.receiptPath,
     );
   }
 }
+

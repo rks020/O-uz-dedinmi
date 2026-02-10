@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Fiş/Fatura yüklemek için galeriye erişim izni gereklidir.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Fiş/Fatura fotoğrafı çekmek için kamera izni gereklidir.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Video kaydı için mikrofon izni gereklidir.</string>
 </dict>
 </plist>

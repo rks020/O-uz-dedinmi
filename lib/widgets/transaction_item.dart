@@ -8,6 +8,7 @@ import '../theme/app_theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../providers/data_provider.dart';
 import 'transaction_details_sheet.dart';
+import '../utils/snackbar_utils.dart';
 
 class TransactionItem extends ConsumerWidget {
   final Transaction transaction;
@@ -25,8 +26,9 @@ class TransactionItem extends ConsumerWidget {
     final isVisible = ref.watch(isAmountVisibleProvider);
     final displayMode = ref.watch(displayModeProvider);
     
+    final isIncome = transaction.type == TransactionType.income;
     final statusColor = isPaid ? AppTheme.incomeGreen : AppTheme.expenseRed;
-    final centerIcon = isPaid ? Icons.check : Icons.close;
+    final centerIcon = isPaid ? Icons.check : (isIncome ? Icons.pending_outlined : Icons.close);
     final iconBgColor = isPaid ? AppTheme.incomeGreen : AppTheme.expenseRed;
     final iconColor = Colors.white;
 
@@ -38,7 +40,7 @@ class TransactionItem extends ConsumerWidget {
     if (displayMode == TransactionDisplayMode.category) {
       topLabel = category.name;
     } else {
-      topLabel = isPaid ? 'Ödenen' : 'Geciken';
+      topLabel = isPaid ? (isIncome ? 'Alınan' : 'Ödenen') : (isIncome ? 'Bekleyen' : 'Geciken');
     }
 
     String formatAmount(double value) {
@@ -69,10 +71,17 @@ class TransactionItem extends ConsumerWidget {
             // Status Icon Button
             GestureDetector(
               onTap: () {
-                final newStatus = isPaid ? TransactionStatus.pending : TransactionStatus.paid;
+                final isMarkingPaid = !isPaid;
+                final newStatus = isMarkingPaid ? TransactionStatus.paid : TransactionStatus.pending;
                 ref.read(transactionsControllerProvider).updateTransaction(
                   transaction.copyWith(status: newStatus),
                 );
+                if (context.mounted) {
+                   AppSnackbar.showInfo(
+                     context, 
+                     isMarkingPaid ? 'İşlem ödendi olarak işaretlendi' : 'İşlem beklemede olarak işaretlendi'
+                   );
+                }
               },
               child: Container(
                 width: 32,

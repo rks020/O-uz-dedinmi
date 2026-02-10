@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/data_provider.dart';
 import '../models/transaction.dart';
+import '../models/category.dart';
+import '../services/currency_service.dart';
 import '../theme/app_theme.dart';
 import 'create_group_sheet.dart';
 import 'add_expense_screen.dart';
@@ -10,6 +12,7 @@ import '../widgets/add_category_dialog.dart';
 import '../widgets/transaction_item.dart';
 import '../widgets/first_transaction_success_dialog.dart';
 import 'groups_screen.dart';
+import '../utils/snackbar_utils.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -39,9 +42,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         context,
         MaterialPageRoute(
           builder: (context) => AddExpenseScreen(
-            categories: categories,
+            categories: categories.where((c) => c.type == CategoryType.expense || c.type == CategoryType.both).toList(),
             onAdd: (txn) async {
               await ref.read(transactionsControllerProvider).addTransaction(txn);
+              if (context.mounted) {
+                AppSnackbar.showSuccess(context, 'Gider başarıyla eklendi');
+              }
               
               if (isFirstTransaction && context.mounted) {
                  showDialog(
@@ -285,7 +291,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final transactions = ref.watch(monthlyTransactionsProvider);
     final expenseTransactions = transactions.where((t) => t.type == TransactionType.expense).toList();
     final totalExpense = ref.watch(monthlyExpenseProvider);
-    final remainingExpense = expenseTransactions.where((t) => t.status != TransactionStatus.paid).fold(0.0, (sum, t) => sum + t.amount);
+    final remainingExpense = expenseTransactions.where((t) => t.status != TransactionStatus.paid).fold(0.0, (sum, t) => sum + CurrencyService.convertToTry(t.amount, t.currencyCode));
     final overdueAmount = ref.watch(overdueAmountProvider);
     final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
     

@@ -118,14 +118,19 @@ class DatabaseService {
       {'id': 'exp_diger_e', 'name': 'Diğer', 'colorValue': 0xFF94A3B8, 'type': 'expense'},
     ];
 
+    final snapshot = await _userRef.child('categories').get();
+    Map<dynamic, dynamic> existing = {};
+    if (snapshot.exists) {
+      existing = snapshot.value as Map<dynamic, dynamic>;
+    }
+
     for (var cat in defaultCategories) {
-      final catRef = _userRef.child('categories').child(cat['id']);
-      final snapshot = await catRef.get();
-      if (!snapshot.exists) {
-        await catRef.set(cat);
-      } else {
-        // Optional: Update color/name if they are crucial and might be outdated? 
-        // For now, just ensure existence.
+      // Check if ID exists OR if name already exists
+      final bool existsById = existing.containsKey(cat['id']);
+      final bool existsByName = existing.values.any((e) => (e as Map)['name'] == cat['name'] && e['type'] == cat['type']);
+      
+      if (!existsById && !existsByName) {
+        await _userRef.child('categories').child(cat['id']).set(cat);
       }
     }
   }

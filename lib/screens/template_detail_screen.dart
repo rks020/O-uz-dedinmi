@@ -119,14 +119,26 @@ class TemplateDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 32),
             
-            // Overdue Section
-            _buildTransactionGroup(
-              context, 
-              title: 'Geciken', 
-              amount: transaction.amount, 
-              transactions: [transaction], // Placeholder, logic needed for actual instances
-              isOverdue: true
-            ),
+            // Current/Overdue Section
+            (() {
+              final isPaid = transaction.status == TransactionStatus.paid;
+              final isIncome = transaction.type == TransactionType.income;
+              
+              String sectionTitle;
+              if (isPaid) {
+                sectionTitle = isIncome ? 'Alınan' : 'Ödenen';
+              } else {
+                sectionTitle = isIncome ? 'Bekleyen' : 'Geciken';
+              }
+
+              return _buildTransactionGroup(
+                context, 
+                title: sectionTitle, 
+                amount: transaction.amount, 
+                transactions: [transaction],
+                isOverdue: !isPaid,
+              );
+            })(),
             const SizedBox(height: 16),
             
             // Future Section
@@ -212,12 +224,14 @@ class TemplateDetailScreen extends ConsumerWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: isOverdue ? AppTheme.expenseRed.withOpacity(0.2) : Colors.blue.withOpacity(0.2),
+                  color: !isOverdue 
+                      ? AppTheme.incomeGreen.withOpacity(0.2) 
+                      : AppTheme.expenseRed.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  isOverdue ? Icons.close : Icons.remove, 
-                  color: isOverdue ? AppTheme.expenseRed : Colors.blue, 
+                  !isOverdue ? Icons.check : Icons.close, 
+                  color: !isOverdue ? AppTheme.incomeGreen : AppTheme.expenseRed, 
                   size: 20
                 ),
               ),

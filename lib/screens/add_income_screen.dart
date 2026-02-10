@@ -8,7 +8,9 @@ import '../theme/app_theme.dart';
 import 'currency_selection_screen.dart';
 import 'recurrence_selection_screen.dart';
 import '../widgets/add_category_dialog.dart';
-import '../providers/data_provider.dart'; // Added for transactionsControllerProvider
+import '../providers/data_provider.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart'; // Added for transactionsControllerProvider
 
 class AddIncomeScreen extends ConsumerStatefulWidget { // Changed to ConsumerStatefulWidget
   final Function(Transaction) onAdd;
@@ -36,6 +38,17 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> { // Changed 
   bool _notificationsEnabled = true;
   String? _selectedCategoryId;
   String _currencyCode = 'TRY';
+  File? _receiptImage;
+  
+  Future<void> _pickReceipt() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _receiptImage = File(pickedFile.path);
+      });
+    }
+  }
 
   // Define default categories here
   final List<AppCategory> _defaultIncomeCategories = [
@@ -78,13 +91,16 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> { // Changed 
 
   @override
   Widget build(BuildContext context) {
-    // Combine existing categories with defaults if they are missing
-    final List<AppCategory> displayCategories = [...widget.categories];
-    for (var def in _defaultIncomeCategories) {
-      if (!displayCategories.any((c) => c.name == def.name && c.type == def.type)) {
-        displayCategories.add(def);
+    // Combine existing categories with defaults if they are missing (Deduplicated)
+    final Map<String, AppCategory> unique = {};
+    final all = [...widget.categories, ..._defaultIncomeCategories];
+    for (var cat in all) {
+      final key = cat.name.toLowerCase().trim();
+      if (!unique.containsKey(key)) {
+        unique[key] = cat;
       }
     }
+    final List<AppCategory> displayCategories = unique.values.toList();
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -102,11 +118,11 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> { // Changed 
             child: const Text('Kaydet', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
             onPressed: () {
               if (_titleController.text.isNotEmpty && _amountController.text.isNotEmpty) {
-                // Check if selected category is a default one that needs creation
+                // Check if selected category needs creation in database
                 if (_selectedCategoryId != null) {
                   final selectedCat = displayCategories.firstWhere((c) => c.id == _selectedCategoryId);
-                  final exists = widget.categories.any((c) => c.id == selectedCat.id);
-                  if (!exists) {
+                  final alreadyInDb = widget.categories.any((c) => c.id == selectedCat.id);
+                  if (!alreadyInDb) {
                      ref.read(transactionsControllerProvider).addCategory(selectedCat);
                   }
                 }
@@ -123,6 +139,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> { // Changed 
                   isFinite: _isFinite,
                   notificationEnabled: _notificationsEnabled,
                   currencyCode: _currencyCode,
+                  receiptPath: _receiptImage?.path,
                 );
                 widget.onAdd(transaction);
                 Navigator.pop(context);
@@ -250,43 +267,83 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> { // Changed 
             const Text('KATEGORİ', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             const SizedBox(height: 12),
             Wrap(
-              spacing: 10,
-              runSpacing: 10,
+              spacing: 8,
+              runSpacing: 8,
               children: [
+                ActionChip(
+                  label: const Text('Ekle'),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  avatar: const Icon(Icons.add, size: 16, color: Colors.white),
+                  backgroundColor: Colors.blue,
+                  labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AddCategoryDialog(
+                        type: CategoryType.income,
+                        onAdd: (category) {
+                          ref.read(transactionsControllerProvider).addCategory(category);
+                        },
+                      ),
+                    );
+                  },
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
                 ...displayCategories.map((cat) => _buildCategoryChip(cat)),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
+            const Text('FİŞ / FATURA', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            const SizedBox(height: 12),
             GestureDetector(
-              onTap: () {
-                // Modified to show dialog directly instead of calling widget.onAddCategory
-                showDialog(
-                  context: context,
-                  builder: (context) => AddCategoryDialog(
-                    type: CategoryType.income, // Explicitly set type to income
-                    onAdd: (category) {
-                       // Add category via provider
-                       ref.read(transactionsControllerProvider).addCategory(category);
-                    },
+                onTap: _pickReceipt,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.05)),
                   ),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.add_circle, size: 20, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text('Ekle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ],
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: _receiptImage != null 
+                            ? ClipOval(child: Image.file(_receiptImage!, fit: BoxFit.cover))
+                            : const Icon(Icons.receipt_long, color: AppTheme.primaryColor),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Fiş / Fatura Ekle',
+                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                             if (_receiptImage != null)
+                              const Text(
+                                'Görüntü seçildi. Değiştirmek için dokunun.',
+                                style: TextStyle(color: Colors.green, fontSize: 12),
+                              )
+                            else
+                              Text(
+                                'Fotoğraf çekin veya galeriden seçin',
+                                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.camera_alt_outlined, color: Colors.grey),
+                    ],
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ),

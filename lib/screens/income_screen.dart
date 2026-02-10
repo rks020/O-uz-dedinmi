@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/data_provider.dart';
 import '../theme/app_theme.dart';
+import '../services/currency_service.dart';
 import '../models/transaction.dart';
 import '../models/category.dart';
+import '../utils/snackbar_utils.dart';
+import '../widgets/add_category_dialog.dart';
 import '../widgets/transaction_item.dart';
 import 'add_income_screen.dart';
 
@@ -15,8 +18,8 @@ class IncomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final transactions = ref.watch(monthlyTransactionsProvider);
     final incomeTransactions = transactions.where((t) => t.type == TransactionType.income).toList();
-    final totalIncome = incomeTransactions.fold(0.0, (sum, t) => sum + t.amount);
-    final paidIncome = incomeTransactions.where((t) => t.status == TransactionStatus.paid).fold(0.0, (sum, t) => sum + t.amount);
+    final totalIncome = incomeTransactions.fold(0.0, (sum, t) => sum + CurrencyService.convertToTry(t.amount, t.currencyCode));
+    final paidIncome = incomeTransactions.where((t) => t.status == TransactionStatus.paid).fold(0.0, (sum, t) => sum + CurrencyService.convertToTry(t.amount, t.currencyCode));
     final remainingIncome = totalIncome - paidIncome;
     
     final selectedDate = ref.watch(selectedDateProvider);
@@ -76,9 +79,20 @@ class IncomeScreen extends ConsumerWidget {
                       categories: categories.where((c) => c.type == CategoryType.income || c.type == CategoryType.both).toList(),
                       onAdd: (txn) {
                         ref.read(transactionsControllerProvider).addTransaction(txn);
+                        if (context.mounted) {
+                           AppSnackbar.showSuccess(context, 'Gelir başarıyla eklendi');
+                        }
                       },
                       onAddCategory: () {
-                        // Implement category add here if needed
+                         showDialog(
+                          context: context,
+                          builder: (context) => AddCategoryDialog(
+                            type: CategoryType.income,
+                            onAdd: (category) {
+                              ref.read(transactionsControllerProvider).addCategory(category);
+                            },
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -191,14 +205,14 @@ class IncomeScreen extends ConsumerWidget {
         (c) => c.id == entry.key,
         orElse: () => AppCategory(id: 'other', name: 'Diğer', colorValue: Colors.grey.value, type: CategoryType.both),
       );
-      final total = entry.value.fold(0.0, (sum, t) => sum + t.amount);
+      final total = entry.value.fold(0.0, (sum, t) => sum + CurrencyService.convertToTry(t.amount, t.currencyCode));
       return _buildStatusSection(category.name, total, entry.value, isVisible);
     }).toList();
   }
 
   Widget _buildStatusSection(String title, double amount, List<Transaction> transactions, bool isVisible) {
      final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
-     final remainingInGroup = transactions.where((t) => t.status != TransactionStatus.paid).fold(0.0, (sum, t) => sum + t.amount);
+     final remainingInGroup = transactions.where((t) => t.status != TransactionStatus.paid).fold(0.0, (sum, t) => sum + CurrencyService.convertToTry(t.amount, t.currencyCode));
      
      return Container(
        margin: const EdgeInsets.only(bottom: 16),
