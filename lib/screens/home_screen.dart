@@ -346,16 +346,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final targetDate = DateTime(selectedDate.year, selectedDate.month + offset);
     final label = DateFormat('MMM', 'tr_TR').format(targetDate);
     
-    return TextButton(
-      onPressed: () {
+    return GestureDetector(
+      onTap: () {
         ref.read(selectedDateProvider.notifier).state = targetDate;
       },
-      child: Row(
-        children: [
-          if (offset < 0) const Icon(Icons.chevron_left, color: Colors.grey, size: 20),
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-          if (offset > 0) const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
-        ],
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            if (offset < 0) const Icon(Icons.chevron_left, color: Colors.grey, size: 18),
+            Text(label, style: const TextStyle(color: Colors.grey)),
+            if (offset > 0) const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
+          ],
+        ),
       ),
     );
   }
