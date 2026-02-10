@@ -16,9 +16,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _isPasswordVisible = false;
   String? _errorMessage;
 
   Future<void> _login() async {
+    // ... existing login logic ...
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -74,13 +76,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               // Logo
               Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                width: 120, // Increased size slightly to match request roughly or just good size
+                height: 120,
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.account_balance_wallet, size: 50, color: AppTheme.primaryColor),
+                clipBehavior: Clip.antiAlias, // Ensure image is clipped to circle
+                child: Image.asset('assets/images/icon_bg.png'),
               ),
               const SizedBox(height: 32),
               const Text(
@@ -118,15 +120,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: !_isPasswordVisible,
                 style: const TextStyle(color: Colors.white),
                 decoration: AppTheme.inputDecoration('Şifre').copyWith(
                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      });
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isLoading ? null : _login,
+// ...
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,

@@ -16,9 +16,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
   String? _errorMessage;
 
   Future<void> _register() async {
+    // ... existing register logic ...
     if (_passwordController.text != _confirmPasswordController.text) {
       setState(() => _errorMessage = 'Şifreler uyuşmuyor.');
       return;
@@ -83,6 +86,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Logo
+              Container(
+                width: 120, // Match login screen size
+                height: 120,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset('assets/images/icon_bg.png'),
+              ),
+              const SizedBox(height: 32),
               const Text(
                 'Kayıt Ol',
                 style: TextStyle(
@@ -118,24 +132,47 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               const SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: !_isPasswordVisible,
                 style: const TextStyle(color: Colors.white),
                 decoration: AppTheme.inputDecoration('Şifre').copyWith(
                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      });
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _confirmPasswordController,
-                obscureText: true,
+                obscureText: !_isConfirmPasswordVisible,
                 style: const TextStyle(color: Colors.white),
                 decoration: AppTheme.inputDecoration('Şifre Onay').copyWith(
                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                      });
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isLoading ? null : _register,
+// ...
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
