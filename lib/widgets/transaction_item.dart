@@ -1,73 +1,92 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import '../theme/app_theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../providers/data_provider.dart';
 
-class TransactionItem extends StatelessWidget {
+class TransactionItem extends ConsumerWidget {
   final Transaction transaction;
 
   const TransactionItem({super.key, required this.transaction});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     Color statusColor;
-    IconData statusIcon;
+    IconData centerIcon;
+    Color iconBgColor;
+    Color iconColor;
 
+    // Determine styles based on status and type
     switch (transaction.status) {
       case TransactionStatus.overdue:
         statusColor = AppTheme.expenseRed;
-        statusIcon = Icons.close;
+        centerIcon = Icons.close;
+        iconBgColor = AppTheme.expenseRed;
+        iconColor = Colors.white;
         break;
       case TransactionStatus.paid:
         statusColor = AppTheme.incomeGreen;
-        statusIcon = Icons.check;
+        centerIcon = Icons.check;
+        iconBgColor = AppTheme.incomeGreen;
+        iconColor = Colors.white;
         break;
       case TransactionStatus.pending:
         statusColor = AppTheme.accentBlue;
-        statusIcon = Icons.circle; // Or a dot
+        centerIcon = transaction.type == TransactionType.income 
+            ? FontAwesomeIcons.arrowUp 
+            : FontAwesomeIcons.arrowDown;
+        iconBgColor = AppTheme.backgroundLight;
+        iconColor = transaction.type == TransactionType.income 
+            ? AppTheme.incomeGreen 
+            : AppTheme.expenseRed;
         break;
     }
 
-    final dateFormat = DateFormat(
-        'EEE, d', 'tr_TR'); // Requires intl initialization with locale
-    final amountFormat =
-        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+    final dateFormat = DateFormat('d MMM', 'tr_TR');
+    final amountFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surfaceColor, // Dark surface
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        // No shadow for dark theme typically, or subtle
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Row(
         children: [
+          // Status Dot
+          if (transaction.status == TransactionStatus.overdue || transaction.status == TransactionStatus.pending)
+            Container(
+              margin: const EdgeInsets.only(right: 12),
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: statusColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            
+          // Icon Container
           Container(
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppTheme.backgroundLight,
-              borderRadius: BorderRadius.circular(12),
+              color: iconBgColor,
+              borderRadius: BorderRadius.circular(24), // Circle
             ),
             child: Icon(
-              transaction.type == TransactionType.income
-                  ? FontAwesomeIcons.arrowUp
-                  : FontAwesomeIcons.arrowDown,
-              color: transaction.type == TransactionType.income
-                  ? AppTheme.incomeGreen
-                  : AppTheme.expenseRed,
+              centerIcon,
+              color: iconColor,
               size: 20,
             ),
           ),
           const SizedBox(width: 16),
+          
+          // Title and Amount
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,49 +96,33 @@ class TransactionItem extends StatelessWidget {
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: AppTheme.textDark,
+                    color: Colors.white, // Text Dark -> White for dark mode
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
-                  transaction.category, // e.g. "Fatura"
+                  amountFormat.format(transaction.amount),
                   style: const TextStyle(
-                    color: AppTheme.textLight,
-                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: Colors.white70,
                   ),
                 ),
               ],
             ),
           ),
+          
+          // Date
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                amountFormat.format(transaction.amount),
+                dateFormat.format(transaction.date), // e.g. 10 Şub
                 style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: AppTheme.textDark,
+                  color: Colors.grey,
+                  fontSize: 13,
                 ),
-              ),
-              Row(
-                children: [
-                  Text(
-                    dateFormat.format(transaction.date),
-                    style: const TextStyle(
-                      color: AppTheme.textLight,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  if (transaction.status == TransactionStatus.pending)
-                    Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                            color: statusColor, shape: BoxShape.circle))
-                  else
-                    Icon(statusIcon, color: statusColor, size: 14),
-                ],
               ),
             ],
           ),

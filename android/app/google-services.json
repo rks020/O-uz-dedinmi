@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "537286274195",
+    "firebase_url": "https://gelirgider-a59e5-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "gelirgider-a59e5",
+    "storage_bucket": "gelirgider-a59e5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:537286274195:android:01b695784a437df8bf3166",
+        "android_client_info": {
+          "package_name": "com.oguzodedinmi.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6T7CZ3ESveb4aqY0ujio6lYGWqXJqzSU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:537286274195:android:48f45cf76186fb7fbf3166",
+        "android_client_info": {
+          "package_name": "com.uzelabs.odedimmi.odedimmi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6T7CZ3ESveb4aqY0ujio6lYGWqXJqzSU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

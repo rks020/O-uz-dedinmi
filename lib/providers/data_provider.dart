@@ -1,85 +1,54 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import '../models/transaction.dart';
+import '../models/group.dart';
+import '../models/category.dart';
+import '../services/database_service.dart';
 
-final transactionsProvider = NotifierProvider<TransactionsNotifier, List<Transaction>>(TransactionsNotifier.new);
+final databaseServiceProvider = Provider<DatabaseService>((ref) => DatabaseService());
 
-class TransactionsNotifier extends Notifier<List<Transaction>> {
-  @override
-  List<Transaction> build() {
-    return [
-      Transaction(
-        id: const Uuid().v4(),
-        title: 'Kasko',
-        amount: 16500,
-        date: DateTime.now().subtract(const Duration(days: 5)),
-        type: TransactionType.expense,
-        status: TransactionStatus.overdue,
-        category: 'Sigorta',
-      ),
-      Transaction(
-        id: const Uuid().v4(),
-        title: 'Elektrik',
-        amount: 600,
-        date: DateTime.now().subtract(const Duration(days: 3)),
-        type: TransactionType.expense,
-        status: TransactionStatus.overdue,
-        category: 'Fatura',
-      ),
-      Transaction(
-        id: const Uuid().v4(),
-        title: 'Kira',
-        amount: 35000,
-        date: DateTime.now().subtract(const Duration(days: 10)),
-        type: TransactionType.expense,
-        status: TransactionStatus.paid,
-        category: 'Ev',
-      ),
-      Transaction(
-        id: const Uuid().v4(),
-        title: 'Sadık Telefon',
-        amount: 275,
-        date: DateTime.now().subtract(const Duration(days: 12)),
-        type: TransactionType.expense,
-        status: TransactionStatus.paid,
-        category: 'Fatura',
-      ),
-      Transaction(
-        id: const Uuid().v4(),
-        title: 'Aidat',
-        amount: 1250,
-        date: DateTime.now().subtract(const Duration(days: 15)),
-        type: TransactionType.expense,
-        status: TransactionStatus.paid,
-        category: 'Ev',
-      ),
-      Transaction(
-        id: const Uuid().v4(),
-        title: 'Maaş',
-        amount: 85000,
-        date: DateTime.now().subtract(const Duration(days: 1)),
-        type: TransactionType.income,
-        status: TransactionStatus.paid,
-        category: 'Maaş',
-      ),
-      Transaction(
-        id: const Uuid().v4(),
-        title: 'Freelance',
-        amount: 15000,
-        date: DateTime.now().add(const Duration(days: 5)),
-        type: TransactionType.income,
-        status: TransactionStatus.pending,
-        category: 'Freelance',
-      ),
-    ];
+final transactionsProvider = StreamProvider<List<Transaction>>((ref) {
+  final dbService = ref.watch(databaseServiceProvider);
+  return dbService.transactionsStream;
+});
+
+final groupsProvider = StreamProvider<List<Group>>((ref) {
+  final dbService = ref.watch(databaseServiceProvider);
+  return dbService.groupsStream.map((items) => items.map(Group.fromMap).toList());
+});
+
+final categoriesProvider = StreamProvider<List<AppCategory>>((ref) {
+  final dbService = ref.watch(databaseServiceProvider);
+  return dbService.categoriesStream.map((items) => items.map(AppCategory.fromMap).toList());
+});
+
+// Helper for CRUD operations (since StreamProvider is read-only)
+final transactionsControllerProvider = Provider<TransactionsController>((ref) {
+  return TransactionsController(ref.watch(databaseServiceProvider));
+});
+
+class TransactionsController {
+  final DatabaseService _dbService;
+
+  TransactionsController(this._dbService);
+
+  Future<void> addTransaction(Transaction t) async {
+    await _dbService.addTransaction(t);
   }
 
-  void addTransaction(Transaction t) {
-    state = [...state, t];
+  Future<void> removeTransaction(String id) async {
+    await _dbService.deleteTransaction(id);
   }
 
-  void removeTransaction(String id) {
-    state = state.where((t) => t.id != id).toList();
+  Future<void> createGroup(Group group) async {
+    await _dbService.createGroup(group.toMap());
+  }
+
+  Future<void> deleteGroup(String id) async {
+    await _dbService.deleteGroup(id);
+  }
+
+  Future<void> addCategory(AppCategory category) async {
+    await _dbService.addCategory(category.toMap());
   }
 }
 
@@ -94,11 +63,16 @@ class SelectedDateNotifier extends Notifier<DateTime> {
 
 // Selectors
 final monthlyTransactionsProvider = Provider<List<Transaction>>((ref) {
-  final transactions = ref.watch(transactionsProvider);
+  final transactionsAsync = ref.watch(transactionsProvider);
   final date = ref.watch(selectedDateProvider);
-  return transactions
-      .where((t) => t.date.year == date.year && t.date.month == date.month)
-      .toList();
+
+  return transactionsAsync.when(
+    data: (transactions) => transactions
+        .where((t) => t.date.year == date.year && t.date.month == date.month)
+        .toList(),
+    loading: () => [],
+    error: (_, __) => [],
+  );
 });
 
 final monthlyIncomeProvider = Provider<double>((ref) {

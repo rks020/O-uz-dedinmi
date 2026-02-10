@@ -12,6 +12,11 @@ class AppTheme {
   static const Color textDark = Color(0xFF1F2937); // Dark Grey
   static const Color textLight = Color(0xFF9CA3AF); // Light Grey Text
 
+  // Semantic Aliases and Dark Theme Colors
+  static const Color primaryColor = Color(0xFF3B82F6); // Using accent Blue as primary for UI
+  static const Color backgroundColor = Color(0xFF0F172A); // Dark Slate
+  static const Color surfaceColor = Color(0xFF1E293B); // Lighter Dark Slate
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
