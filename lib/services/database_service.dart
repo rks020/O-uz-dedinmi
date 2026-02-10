@@ -123,6 +123,9 @@ class DatabaseService {
       final snapshot = await catRef.get();
       if (!snapshot.exists) {
         await catRef.set(cat);
+      } else {
+        // Optional: Update color/name if they are crucial and might be outdated? 
+        // For now, just ensure existence.
       }
     }
   }

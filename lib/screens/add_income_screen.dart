@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added import
 import 'package:intl/intl.dart';
 import '../../models/transaction.dart';
 import '../../models/category.dart';
@@ -6,8 +7,9 @@ import '../../models/transaction_options.dart';
 import '../theme/app_theme.dart';
 import 'currency_selection_screen.dart';
 import 'recurrence_selection_screen.dart';
+import '../providers/data_provider.dart'; // Added for transactionsControllerProvider
 
-class AddIncomeScreen extends StatefulWidget {
+class AddIncomeScreen extends ConsumerStatefulWidget { // Changed to ConsumerStatefulWidget
   final Function(Transaction) onAdd;
   final List<AppCategory> categories;
   final Function() onAddCategory;
@@ -20,10 +22,10 @@ class AddIncomeScreen extends StatefulWidget {
   });
 
   @override
-  State<AddIncomeScreen> createState() => _AddIncomeScreenState();
+  ConsumerState<AddIncomeScreen> createState() => _AddIncomeScreenState(); // Changed to ConsumerState
 }
 
-class _AddIncomeScreenState extends State<AddIncomeScreen> {
+class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> { // Changed to ConsumerState
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   TransactionStatus _status = TransactionStatus.pending;
@@ -33,6 +35,13 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
   bool _notificationsEnabled = true;
   String? _selectedCategoryId;
   String _currencyCode = 'TRY';
+
+  // Define default categories here
+  final List<AppCategory> _defaultIncomeCategories = [
+    AppCategory(id: 'inc_maas', name: 'Maaş', colorValue: 0xFFF59E0B, type: CategoryType.income),
+    AppCategory(id: 'inc_bonus', name: 'Bonus', colorValue: 0xFF10B981, type: CategoryType.income),
+    AppCategory(id: 'inc_diger_i', name: 'Diğer', colorValue: 0xFF6B7280, type: CategoryType.income),
+  ];
 
   void _showCurrencyPicker() {
     Navigator.push(
@@ -68,6 +77,14 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Combine existing categories with defaults if they are missing
+    final List<AppCategory> displayCategories = [...widget.categories];
+    for (var def in _defaultIncomeCategories) {
+      if (!displayCategories.any((c) => c.name == def.name && c.type == def.type)) {
+        displayCategories.add(def);
+      }
+    }
+
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
@@ -84,6 +101,15 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
             child: const Text('Kaydet', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
             onPressed: () {
               if (_titleController.text.isNotEmpty && _amountController.text.isNotEmpty) {
+                // Check if selected category is a default one that needs creation
+                if (_selectedCategoryId != null) {
+                  final selectedCat = displayCategories.firstWhere((c) => c.id == _selectedCategoryId);
+                  final exists = widget.categories.any((c) => c.id == selectedCat.id);
+                  if (!exists) {
+                     ref.read(transactionsControllerProvider).addCategory(selectedCat);
+                  }
+                }
+
                 final transaction = Transaction(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
                   title: _titleController.text,
@@ -129,6 +155,8 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        const Icon(Icons.flag, color: Colors.blue, size: 16),
+                        const SizedBox(width: 4),
                         Text(_currencyCode, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
                         const SizedBox(width: 4),
                         const Icon(Icons.chevron_right, color: Colors.blue, size: 18),
@@ -147,7 +175,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                   Text(
                     _repeat.label,
                     style: const TextStyle(color: Colors.white),
                   ),
@@ -224,7 +252,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
               spacing: 10,
               runSpacing: 10,
               children: [
-                ...widget.categories.map((cat) => _buildCategoryChip(cat)),
+                ...displayCategories.map((cat) => _buildCategoryChip(cat)),
               ],
             ),
             const SizedBox(height: 16),
