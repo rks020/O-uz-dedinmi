@@ -202,23 +202,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                      ),
                      const SizedBox(width: 8),
                      IconButton(
-                       icon: const Icon(Icons.sort, color: AppTheme.primaryColor),
-                       onPressed: () => ref.read(displayModeProvider.notifier).setMode(TransactionDisplayMode.category),
-                       style: IconButton.styleFrom(
-                         backgroundColor: ref.watch(displayModeProvider) == TransactionDisplayMode.category 
-                             ? AppTheme.primaryColor.withOpacity(0.2) 
-                             : AppTheme.surfaceColor, 
-                         shape: const CircleBorder()
+                       icon: Icon(
+                         ref.watch(displayModeProvider) == TransactionDisplayMode.category 
+                             ? Icons.sort 
+                             : Icons.calendar_today_outlined, 
+                         color: AppTheme.primaryColor
                        ),
-                     ),
-                     const SizedBox(width: 8),
-                     IconButton(
-                       icon: const Icon(Icons.calendar_today_outlined, color: AppTheme.primaryColor),
-                       onPressed: () => ref.read(displayModeProvider.notifier).setMode(TransactionDisplayMode.status),
+                       onPressed: () => ref.read(displayModeProvider.notifier).toggle(),
                        style: IconButton.styleFrom(
-                         backgroundColor: ref.watch(displayModeProvider) == TransactionDisplayMode.status 
-                             ? AppTheme.primaryColor.withOpacity(0.2) 
-                             : AppTheme.surfaceColor, 
+                         backgroundColor: AppTheme.surfaceColor, 
                          shape: const CircleBorder()
                        ),
                      ),

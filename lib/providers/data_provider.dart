@@ -118,5 +118,12 @@ final displayModeProvider = NotifierProvider<DisplayModeNotifier, TransactionDis
 class DisplayModeNotifier extends Notifier<TransactionDisplayMode> {
   @override
   TransactionDisplayMode build() => TransactionDisplayMode.category;
+  
+  void toggle() {
+    state = state == TransactionDisplayMode.category 
+        ? TransactionDisplayMode.status 
+        : TransactionDisplayMode.category;
+  }
+
   void setMode(TransactionDisplayMode mode) => state = mode;
 }
