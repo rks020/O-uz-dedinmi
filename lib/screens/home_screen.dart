@@ -229,6 +229,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                ],
              ),
            ),
+
+           // Month Selector (Always Visible)
+           Padding(
+             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+             child: Row(
+               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+               children: [
+                 _buildMonthScrollButton(selectedDate, -1),
+                 Container(
+                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                   decoration: BoxDecoration(
+                     color: AppTheme.primaryColor,
+                     borderRadius: BorderRadius.circular(20),
+                   ),
+                   child: Text(
+                     DateFormat('MMM yyyy', 'tr_TR').format(selectedDate),
+                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                   ),
+                 ),
+                 _buildMonthScrollButton(selectedDate, 1),
+               ],
+             ),
+           ),
            
            if (!isEmpty) ...[
              _buildDashboardContent(context),
@@ -258,85 +281,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildDashboardContent(BuildContext context) {
-    // Moved the rest of the dashboard logic here logic from previous _buildDashboard
-    final expenseTransactions = ref.watch(monthlyTransactionsProvider).where((t) => t.type == TransactionType.expense).toList();
+    final transactions = ref.watch(monthlyTransactionsProvider);
+    final expenseTransactions = transactions.where((t) => t.type == TransactionType.expense).toList();
     final totalExpense = ref.watch(monthlyExpenseProvider);
     final remainingExpense = expenseTransactions.where((t) => t.status != TransactionStatus.paid).fold(0.0, (sum, t) => sum + t.amount);
     final overdueAmount = ref.watch(overdueAmountProvider);
     final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
-    final dateFormat = DateFormat('MMM yyyy', 'tr_TR');
-    final selectedDate = ref.watch(selectedDateProvider);
     
     return Expanded(
-      child: Column(
+      child: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          // Month Selector
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildMonthScrollButton(selectedDate, -1),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
-                  ),
-                  child: Text(
-                    dateFormat.format(selectedDate),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ),
-                _buildMonthScrollButton(selectedDate, 1),
-              ],
+          if (overdueAmount > 0) ...[
+            _buildSummaryCard(
+              title: 'Geciken',
+              amount: overdueAmount,
+              color: const Color(0xFF2C1E21),
+              currencyFormat: currencyFormat,
+              isOverdue: true,
+              isVisible: ref.watch(isAmountVisibleProvider),
             ),
-          ),
-          
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (overdueAmount > 0) ...[
-                  _buildSummaryCard(
-                    title: 'Geciken',
-                    amount: overdueAmount,
-                    color: const Color(0xFF2C1E21),
-                    currencyFormat: currencyFormat,
-                    isOverdue: true,
-                    isVisible: ref.watch(isAmountVisibleProvider),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                ...expenseTransactions.map((tx) => TransactionItem(transaction: tx)),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildSummaryCard(
-                        title: 'Toplam Gider',
-                        amount: totalExpense,
-                        color: AppTheme.surfaceColor,
-                        currencyFormat: currencyFormat,
-                        isVisible: ref.watch(isAmountVisibleProvider),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildSummaryCard(
-                        title: 'Kalan Gider',
-                        amount: remainingExpense,
-                        color: AppTheme.surfaceColor,
-                        currencyFormat: currencyFormat,
-                        isVisible: ref.watch(isAmountVisibleProvider),
-                      ),
-                    ),
-                  ],
+            const SizedBox(height: 16),
+          ],
+          ...expenseTransactions.map((tx) => TransactionItem(transaction: tx)),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryCard(
+                  title: 'Toplam Gider',
+                  amount: totalExpense,
+                  color: AppTheme.surfaceColor,
+                  currencyFormat: currencyFormat,
+                  isVisible: ref.watch(isAmountVisibleProvider),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildSummaryCard(
+                  title: 'Kalan Gider',
+                  amount: remainingExpense,
+                  color: AppTheme.surfaceColor,
+                  currencyFormat: currencyFormat,
+                  isVisible: ref.watch(isAmountVisibleProvider),
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 40),
         ],
       ),
     );
