@@ -6,6 +6,7 @@ import '../providers/data_provider.dart';
 import '../theme/app_theme.dart';
 import '../models/transaction.dart';
 import '../models/category.dart';
+import '../widgets/sankey_flow_chart.dart';
 
 class AnalysisScreen extends ConsumerStatefulWidget {
   const AnalysisScreen({super.key});
@@ -15,7 +16,7 @@ class AnalysisScreen extends ConsumerStatefulWidget {
 }
 
 class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
-  bool _isChartActive = true;
+  bool _isChartActive = false; // Default to 'Akış' view as requested
 
   @override
   Widget build(BuildContext context) {
@@ -103,37 +104,86 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                 ),
               ),
             ),
-            if (_isChartActive) ...[
+            if (!_isChartActive) ...[
+              const SizedBox(height: 32),
+              _buildFlowSection(transactionsAsync, categoriesAsync),
+              const SizedBox(height: 40),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.ios_share, color: Colors.blue, size: 24),
+                  ),
+                ),
+              ),
+            ] else if (_isChartActive) ...[
               const SizedBox(height: 32),
               _buildChartSection(transactionsAsync),
               const SizedBox(height: 40),
               _buildCategoriesSection(transactionsAsync, categoriesAsync),
               const SizedBox(height: 40),
-            ] else 
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.only(top: 100),
-                  child: Column(
-                    children: [
-                      Icon(Icons.bar_chart_outlined, size: 64, color: Colors.white24),
-                      SizedBox(height: 16),
-                      Text(
-                        'Seçilen dönem için işlem yok',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Finansal akışınızı görmek için gelir ve gider\neklemeye başlayın',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFlowSection(AsyncValue<List<Transaction>> transactionsAsync, AsyncValue<List<AppCategory>> categoriesAsync) {
+    return transactionsAsync.when(
+      data: (transactions) {
+        final selectedDate = ref.watch(selectedDateProvider);
+        final currentMonthTransactions = transactions.where((t) => t.date.year == selectedDate.year && t.date.month == selectedDate.month).toList();
+        final categories = categoriesAsync.value ?? [];
+
+        final income = currentMonthTransactions.where((t) => t.type == TransactionType.income).fold(0.0, (sum, t) => sum + t.amount);
+        final expenses = currentMonthTransactions.where((t) => t.type == TransactionType.expense).fold(0.0, (sum, t) => sum + t.amount);
+
+        // Group income by categories
+        final Map<String, double> incomeMap = {};
+        for (var t in currentMonthTransactions.where((t) => t.type == TransactionType.income)) {
+          incomeMap[t.categoryId] = (incomeMap[t.categoryId] ?? 0) + t.amount;
+        }
+
+        // Group expenses by categories (or just show 'Giderler' if many)
+        final Map<String, double> expenseMap = {};
+        for (var t in currentMonthTransactions.where((t) => t.type == TransactionType.expense)) {
+          expenseMap[t.categoryId] = (expenseMap[t.categoryId] ?? 0) + t.amount;
+        }
+        
+        final List<CategoryVolume> incomeBreakdown = incomeMap.entries.map((e) {
+          final cat = categories.firstWhere((c) => c.id == e.key, orElse: () => AppCategory(id: '?', name: 'Gelir', colorValue: Colors.amber.value, type: CategoryType.both));
+          return CategoryVolume(name: cat.name, amount: e.value, color: Color(cat.colorValue));
+        }).toList();
+
+        // If many expense categories, we might want to group them to keep graph clean
+        final List<CategoryVolume> expenseBreakdown = expenseMap.entries.map((e) {
+          final cat = categories.firstWhere((c) => c.id == e.key, orElse: () => AppCategory(id: '?', name: 'Gider', colorValue: Colors.red.value, type: CategoryType.both));
+          return CategoryVolume(name: cat.name, amount: e.value, color: Color(cat.colorValue));
+        }).toList();
+
+        if (income == 0 && expenses == 0) {
+          return const SizedBox(
+            height: 300,
+            child: Center(child: Text('Bu ay için akış verisi yok', style: TextStyle(color: Colors.grey))),
+          );
+        }
+
+        return SankeyFlowChart(
+          income: income,
+          expenses: expenses,
+          incomeBreakdown: incomeBreakdown,
+          expenseBreakdown: expenseBreakdown,
+        );
+      },
+      loading: () => const SizedBox(height: 300, child: Center(child: CircularProgressIndicator())),
+      error: (_, __) => const SizedBox(height: 300, child: Center(child: Text('Veri yüklenemedi'))),
     );
   }
 
