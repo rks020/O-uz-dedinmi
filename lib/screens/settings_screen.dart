@@ -15,33 +15,43 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: false,
         title: const Text(
           'Ayarlar',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: AppTheme.primaryColor),
-            onPressed: () {},
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.search, color: Colors.blue, size: 24),
+                onPressed: () {},
+              ),
+            ),
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           _buildSectionHeader('HESAP'),
           _buildSettingsGroup([
             _buildSettingsItem(
-              icon: Icons.person_outline,
+              icon: Icons.person,
               iconColor: Colors.blue,
               title: 'Hesap',
-              subtitle: '${user?.email ?? 'Kullanıcı'} • Ücretsiz Plan',
+              subtitle: '${user?.email ?? 'Kerem Sari'} • Ücretsiz Plan',
               onTap: () {},
             ),
             _buildSettingsItem(
-              icon: Icons.grid_view_outlined,
-              iconColor: Colors.blueAccent,
+              icon: Icons.hub_outlined,
+              iconColor: Colors.blue,
               title: 'Çalışma Alanı',
               subtitle: 'Gruplar, kategoriler • Türkçe',
               onTap: () {},
@@ -52,15 +62,15 @@ class SettingsScreen extends ConsumerWidget {
           _buildSectionHeader('GELİŞİM'),
           _buildSettingsGroup([
             _buildSettingsItem(
-              icon: Icons.help_outline,
+              icon: Icons.quiz_outlined,
               iconColor: Colors.blue,
               title: 'Kişisel Finans Testi',
               subtitle: 'Mevcut finansal durumunuzu ölçün',
               onTap: () {},
             ),
             _buildSettingsItem(
-              icon: Icons.article_outlined,
-              iconColor: Colors.blueAccent,
+              icon: Icons.menu_book_outlined,
+              iconColor: Colors.blue,
               title: 'Yorgan',
               subtitle: 'Maddi gelişim programı',
               onTap: () {},
@@ -79,7 +89,7 @@ class SettingsScreen extends ConsumerWidget {
             ),
             _buildSettingsItem(
               icon: Icons.palette_outlined,
-              iconColor: Colors.blueAccent,
+              iconColor: Colors.blue,
               title: 'Görünüm',
               subtitle: 'Sistem • Lacivert',
               onTap: () {},
@@ -115,14 +125,14 @@ class SettingsScreen extends ConsumerWidget {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      padding: const EdgeInsets.only(left: 4, bottom: 12),
       child: Text(
         title,
         style: const TextStyle(
           color: Colors.grey,
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: FontWeight.bold,
-          letterSpacing: 1.2,
+          letterSpacing: 0.5,
         ),
       ),
     );
@@ -132,7 +142,7 @@ class SettingsScreen extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
@@ -143,7 +153,7 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               item,
               if (index < items.length - 1)
-                Divider(color: Colors.white.withOpacity(0.05), height: 1, indent: 64),
+                Divider(color: Colors.white.withOpacity(0.03), height: 1, indent: 68),
             ],
           );
         }).toList(),
@@ -162,26 +172,27 @@ class SettingsScreen extends ConsumerWidget {
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: Container(
-        width: 40,
-        height: 40,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.2),
+          color: iconColor.withOpacity(0.15),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: iconColor, size: 20),
+        child: Icon(icon, color: iconColor, size: 22),
       ),
       title: Text(
         title,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 17),
       ),
       subtitle: Padding(
-        padding: const EdgeInsets.only(top: 4),
+        padding: const EdgeInsets.only(top: 2),
         child: Text(
           subtitle,
           style: TextStyle(color: Colors.grey[400], fontSize: 13),
         ),
       ),
-      trailing: const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+      trailing: const Icon(Icons.chevron_right, color: Colors.grey, size: 24),
     );
   }
 }
+

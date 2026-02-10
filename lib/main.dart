@@ -32,6 +32,8 @@ class MyApp extends StatelessWidget {
       title: 'OğuzÖdedinmi',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.dark,
       home: const AuthWrapper(),
     );
   }
