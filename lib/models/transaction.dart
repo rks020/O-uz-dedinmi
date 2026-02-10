@@ -82,4 +82,37 @@ class Transaction {
       currencyCode: map['currencyCode'] ?? 'TRY',
     );
   }
+  Transaction copyWith({
+    String? id,
+    String? title,
+    double? amount,
+    DateTime? date,
+    TransactionType? type,
+    TransactionStatus? status,
+    String? categoryId,
+    String? iconPath,
+    String? description,
+    RecurrenceType? repeat,
+    bool? isFinite,
+    DateTime? endDate,
+    bool? notificationEnabled,
+    String? currencyCode,
+  }) {
+    return Transaction(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      amount: amount ?? this.amount,
+      date: date ?? this.date,
+      type: type ?? this.type,
+      status: status ?? this.status,
+      categoryId: categoryId ?? this.categoryId,
+      iconPath: iconPath ?? this.iconPath,
+      description: description ?? this.description,
+      repeat: repeat ?? this.repeat,
+      isFinite: isFinite ?? this.isFinite,
+      endDate: endDate ?? this.endDate,
+      notificationEnabled: notificationEnabled ?? this.notificationEnabled,
+      currencyCode: currencyCode ?? this.currencyCode,
+    );
+  }
 }
