@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import '../models/category.dart';
+import '../models/transaction_options.dart';
 import '../providers/data_provider.dart';
 import '../theme/app_theme.dart';
 import 'edit_income_screen.dart';
