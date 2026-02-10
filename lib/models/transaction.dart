@@ -3,6 +3,34 @@ import 'transaction_options.dart';
 enum TransactionType { income, expense }
 enum TransactionStatus { pending, paid, overdue }
 
+class PaymentRecord {
+  final String id;
+  final double amount;
+  final DateTime date;
+
+  PaymentRecord({
+    required this.id,
+    required this.amount,
+    required this.date,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'amount': amount,
+      'date': date.toIso8601String(),
+    };
+  }
+
+  factory PaymentRecord.fromMap(Map<String, dynamic> map) {
+    return PaymentRecord(
+      id: map['id'] ?? '',
+      amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
+      date: DateTime.tryParse(map['date'] ?? '') ?? DateTime.now(),
+    );
+  }
+}
+
 class Transaction {
   final String id;
   final String title;
@@ -10,14 +38,15 @@ class Transaction {
   final DateTime date;
   final TransactionType type;
   final TransactionStatus status;
-  final String categoryId; // Reference to Category ID
-  final String? iconPath; // Optional path for svg or resource
+  final String categoryId;
+  final String? iconPath;
   final String? description;
   final RecurrenceType repeat;
   final bool isFinite;
   final DateTime? endDate;
   final bool notificationEnabled;
   final String currencyCode;
+  final List<PaymentRecord> partialPayments;
 
   Transaction({
     required this.id,
@@ -34,7 +63,11 @@ class Transaction {
     this.endDate,
     this.notificationEnabled = false,
     this.currencyCode = 'TRY',
+    this.partialPayments = const [],
   });
+
+  double get paidAmount => partialPayments.fold(0, (sum, p) => sum + p.amount);
+  double get remainingAmount => amount - paidAmount;
 
   Map<String, dynamic> toMap() {
     return {
@@ -52,6 +85,7 @@ class Transaction {
       'endDate': endDate?.toIso8601String(),
       'notificationEnabled': notificationEnabled,
       'currencyCode': currencyCode,
+      'partialPayments': partialPayments.map((p) => p.toMap()).toList(),
     };
   }
 
@@ -80,8 +114,13 @@ class Transaction {
       endDate: map['endDate'] != null ? DateTime.tryParse(map['endDate']) : null,
       notificationEnabled: map['notificationEnabled'] ?? false,
       currencyCode: map['currencyCode'] ?? 'TRY',
+      partialPayments: (map['partialPayments'] as List?)
+              ?.map((p) => PaymentRecord.fromMap(Map<String, dynamic>.from(p)))
+              .toList() ??
+          [],
     );
   }
+
   Transaction copyWith({
     String? id,
     String? title,
@@ -97,6 +136,7 @@ class Transaction {
     DateTime? endDate,
     bool? notificationEnabled,
     String? currencyCode,
+    List<PaymentRecord>? partialPayments,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -113,6 +153,7 @@ class Transaction {
       endDate: endDate ?? this.endDate,
       notificationEnabled: notificationEnabled ?? this.notificationEnabled,
       currencyCode: currencyCode ?? this.currencyCode,
+      partialPayments: partialPayments ?? this.partialPayments,
     );
   }
 }

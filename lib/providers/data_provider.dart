@@ -43,6 +43,10 @@ class TransactionsController {
     await _dbService.updateTransaction(t);
   }
 
+  Future<void> deleteTransaction(String id) async {
+    await _dbService.deleteTransaction(id);
+  }
+
   Future<void> createGroup(Group group) async {
     await _dbService.createGroup(group.toMap());
   }
