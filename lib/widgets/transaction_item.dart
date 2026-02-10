@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
 import '../models/transaction_options.dart';
+import '../models/category.dart';
 import '../theme/app_theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../providers/data_provider.dart';
@@ -16,7 +17,7 @@ class TransactionItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final categories = ref.watch(categoriesProvider).asData?.value ?? [];
     final category = categories.firstWhere((c) => c.id == transaction.categoryId, 
-      orElse: () => AppCategory(id: '', name: 'Kategori', colorValue: Colors.grey.value, iconPath: ''));
+      orElse: () => AppCategory(id: '', name: 'Kategori', colorValue: Colors.grey.value, type: CategoryType.expense));
 
     final isPaid = transaction.status == TransactionStatus.paid;
     final isOverdue = transaction.status == TransactionStatus.overdue;
