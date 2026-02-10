@@ -221,20 +221,30 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
             const Text('KATEGORİ', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             const SizedBox(height: 12),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 10,
+              runSpacing: 10,
               children: [
                 ...widget.categories.map((cat) => _buildCategoryChip(cat)),
-                ActionChip(
-                  label: const Text('Ekle'),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  avatar: const Icon(Icons.add, size: 16, color: Colors.white),
-                  backgroundColor: Colors.blue,
-                  labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  onPressed: widget.onAddCategory,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                ),
               ],
+            ),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: widget.onAddCategory,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_circle, size: 20, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text('Ekle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -255,7 +265,11 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
       ),
     );
@@ -267,6 +281,7 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: ListTile(
         leading: Container(
@@ -286,28 +301,43 @@ class _AddIncomeScreenState extends State<AddIncomeScreen> {
 
   Widget _buildCategoryChip(AppCategory category) {
     final isSelected = _selectedCategoryId == category.id;
-    return FilterChip(
-      label: Text(category.name),
-      selected: isSelected,
-      onSelected: (selected) {
+    return GestureDetector(
+      onTap: () {
         setState(() {
-          _selectedCategoryId = selected ? category.id : null;
+          _selectedCategoryId = isSelected ? null : category.id;
         });
       },
-      backgroundColor: AppTheme.surfaceColor,
-      selectedColor: Colors.blue.withOpacity(0.3),
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.grey,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-      ),
-      avatar: CircleAvatar(
-        backgroundColor: Color(category.colorValue),
-        radius: 6,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: isSelected ? Colors.blue : Colors.white.withOpacity(0.1)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue.withOpacity(0.2) : AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? Colors.blue : Colors.white.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: Color(category.colorValue),
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              category.name,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey[300],
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

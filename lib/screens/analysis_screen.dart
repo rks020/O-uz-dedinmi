@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../providers/data_provider.dart';
 import '../theme/app_theme.dart';
 import '../models/transaction.dart';
+import '../models/category.dart';
 
 class AnalysisScreen extends ConsumerStatefulWidget {
   const AnalysisScreen({super.key});
@@ -247,7 +248,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildLegendItem(Colors.emerald, 'Gelirler'),
+              _buildLegendItem(AppTheme.incomeGreen, 'Gelirler'),
               const SizedBox(width: 24),
               _buildLegendItem(AppTheme.expenseRed, 'Giderler'),
             ],
@@ -263,7 +264,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       barRods: [
         BarChartRodData(
           toY: income,
-          color: Colors.emerald,
+          color: AppTheme.incomeGreen,
           width: 12,
           borderRadius: BorderRadius.circular(4),
         ),
