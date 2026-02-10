@@ -31,14 +31,15 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       body: _screens[_selectedIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.surfaceColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 20,
               offset: const Offset(0, -5),
             ),
           ],
@@ -47,14 +48,12 @@ class _MainScreenState extends State<MainScreen> {
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
           type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: AppTheme.primaryBlue,
-          unselectedItemColor: AppTheme.textLight,
+          backgroundColor: AppTheme.surfaceColor,
+          selectedItemColor: AppTheme.primaryColor,
+          unselectedItemColor: Colors.grey,
           showUnselectedLabels: true,
-          selectedLabelStyle:
-              const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-          unselectedLabelStyle:
-              const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          selectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
           elevation: 0,
           items: const [
             BottomNavigationBarItem(
