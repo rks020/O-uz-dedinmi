@@ -7,6 +7,7 @@ import '../../models/transaction_options.dart';
 import '../theme/app_theme.dart';
 import 'currency_selection_screen.dart';
 import 'recurrence_selection_screen.dart';
+import '../widgets/add_category_dialog.dart';
 import '../providers/data_provider.dart'; // Added for transactionsControllerProvider
 
 class AddIncomeScreen extends ConsumerStatefulWidget { // Changed to ConsumerStatefulWidget
