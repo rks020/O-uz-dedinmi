@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../providers/data_provider.dart';
 import '../theme/app_theme.dart';
 import '../models/transaction.dart';
+import '../models/category.dart';
+import '../widgets/transaction_item.dart';
 import 'add_income_screen.dart';
 
 class IncomeScreen extends ConsumerWidget {
@@ -182,7 +184,7 @@ class IncomeScreen extends ConsumerWidget {
            initiallyExpanded: true,
            title: Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13)),
            subtitle: Text(currencyFormat.format(amount), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-           children: transactions.map((t) => TransactionItem(transaction: t)).toList(),
+           children: transactions.map<Widget>((t) => TransactionItem(transaction: t)).toList(),
          ),
        ),
      );
