@@ -104,5 +104,19 @@ final overdueAmountProvider = Provider<double>((ref) {
 
 enum TransactionDisplayMode { status, category }
 
-final isAmountVisibleProvider = StateProvider<bool>((ref) => true);
-final displayModeProvider = StateProvider<TransactionDisplayMode>((ref) => TransactionDisplayMode.category);
+final isAmountVisibleProvider = NotifierProvider<AmountVisibilityNotifier, bool>(AmountVisibilityNotifier.new);
+
+class AmountVisibilityNotifier extends Notifier<bool> {
+  @override
+  bool build() => true;
+  void toggle() => state = !state;
+  set value(bool val) => state = val;
+}
+
+final displayModeProvider = NotifierProvider<DisplayModeNotifier, TransactionDisplayMode>(DisplayModeNotifier.new);
+
+class DisplayModeNotifier extends Notifier<TransactionDisplayMode> {
+  @override
+  TransactionDisplayMode build() => TransactionDisplayMode.category;
+  void setMode(TransactionDisplayMode mode) => state = mode;
+}

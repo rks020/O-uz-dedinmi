@@ -197,13 +197,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                          ref.watch(isAmountVisibleProvider) ? Icons.visibility_outlined : Icons.visibility_off_outlined, 
                          color: AppTheme.primaryColor
                        ),
-                       onPressed: () => ref.read(isAmountVisibleProvider.notifier).state = !ref.read(isAmountVisibleProvider),
+                       onPressed: () => ref.read(isAmountVisibleProvider.notifier).toggle(),
                        style: IconButton.styleFrom(backgroundColor: AppTheme.surfaceColor, shape: const CircleBorder()),
                      ),
                      const SizedBox(width: 8),
                      IconButton(
                        icon: const Icon(Icons.sort, color: AppTheme.primaryColor),
-                       onPressed: () => ref.read(displayModeProvider.notifier).state = TransactionDisplayMode.category,
+                       onPressed: () => ref.read(displayModeProvider.notifier).setMode(TransactionDisplayMode.category),
                        style: IconButton.styleFrom(
                          backgroundColor: ref.watch(displayModeProvider) == TransactionDisplayMode.category 
                              ? AppTheme.primaryColor.withOpacity(0.2) 
@@ -214,7 +214,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                      const SizedBox(width: 8),
                      IconButton(
                        icon: const Icon(Icons.calendar_today_outlined, color: AppTheme.primaryColor),
-                       onPressed: () => ref.read(displayModeProvider.notifier).state = TransactionDisplayMode.status,
+                       onPressed: () => ref.read(displayModeProvider.notifier).setMode(TransactionDisplayMode.status),
                        style: IconButton.styleFrom(
                          backgroundColor: ref.watch(displayModeProvider) == TransactionDisplayMode.status 
                              ? AppTheme.primaryColor.withOpacity(0.2) 
@@ -401,7 +401,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                isVisible ? currencyFormat.format(amount) : '******${currencyFormat.symbols['CURRENCY_SYMBOL']}',
+                isVisible ? currencyFormat.format(amount) : '******${currencyFormat.currencySymbol}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,
