@@ -8,24 +8,25 @@ import '../../models/transaction_options.dart';
 import '../theme/app_theme.dart';
 import 'currency_selection_screen.dart';
 import 'recurrence_selection_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/data_provider.dart';
+import '../services/currency_service.dart';
 
-class AddExpenseScreen extends StatefulWidget {
+class AddExpenseScreen extends ConsumerStatefulWidget {
   final Function(Transaction) onAdd;
-  final List<AppCategory> categories;
   final Function() onAddCategory;
 
   const AddExpenseScreen({
     super.key,
     required this.onAdd,
-    required this.categories,
     required this.onAddCategory,
   });
 
   @override
-  State<AddExpenseScreen> createState() => _AddExpenseScreenState();
+  ConsumerState<AddExpenseScreen> createState() => _AddExpenseScreenState();
 }
 
-class _AddExpenseScreenState extends State<AddExpenseScreen> {
+class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   TransactionStatus _status = TransactionStatus.pending;
@@ -36,6 +37,21 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   String? _selectedCategoryId;
   String _currencyCode = 'TRY';
   File? _receiptImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _titleController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickReceipt() async {
     final picker = ImagePicker();
@@ -81,6 +97,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final categoriesAsync = ref.watch(categoriesProvider);
+    final allCategories = categoriesAsync.asData?.value ?? [];
+    final expenseCategories = allCategories
+        .where((c) => c.type == CategoryType.expense || c.type == CategoryType.both)
+        .toList();
+
     return Scaffold(
       backgroundColor: Colors.black, // Dark background
       appBar: AppBar(
@@ -233,6 +255,67 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             const SizedBox(height: 24),
             const Text('KATEGORİ', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             const SizedBox(height: 12),
+            
+            // Budget Warning
+            if (_selectedCategoryId != null) (() {
+              final cat = expenseCategories.firstWhere((c) => c.id == _selectedCategoryId);
+              if (cat.budgetLimit != null) {
+                final transactions = ref.watch(monthlyTransactionsProvider);
+                final spent = transactions
+                    .where((t) => t.categoryId == _selectedCategoryId && t.type == TransactionType.expense)
+                    .fold(0.0, (sum, t) => sum + CurrencyService.convertToTry(t.amount, t.currencyCode));
+                
+                final currentAmount = double.tryParse(_amountController.text) ?? 0.0;
+                final willExceed = (spent + currentAmount) > cat.budgetLimit!;
+                
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: willExceed ? AppTheme.expenseRed.withOpacity(0.1) : Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: willExceed ? AppTheme.expenseRed.withOpacity(0.3) : Colors.transparent,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Kategori Limiti: ${cat.budgetLimit!.toInt()}₺',
+                            style: TextStyle(color: willExceed ? AppTheme.expenseRed : Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            'Harcanan: ${spent.toInt()}₺',
+                            style: const TextStyle(color: Colors.white70, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                      if (willExceed) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.warning_amber_rounded, color: AppTheme.expenseRed, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Bu harcama ile aylık limitinizi ${((spent + currentAmount) - cat.budgetLimit!).toInt()}₺ aşıyorsunuz!',
+                                style: const TextStyle(color: AppTheme.expenseRed, fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            })(),
+
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -248,7 +331,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 ),
                 ...(() {
                   final unique = <String, AppCategory>{};
-                  for (var cat in widget.categories) {
+                  for (var cat in expenseCategories) {
                     final key = cat.name.toLowerCase().trim();
                     if (!unique.containsKey(key)) {
                       unique[key] = cat;

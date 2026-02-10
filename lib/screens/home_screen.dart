@@ -42,7 +42,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         context,
         MaterialPageRoute(
           builder: (context) => AddExpenseScreen(
-            categories: categories.where((c) => c.type == CategoryType.expense || c.type == CategoryType.both).toList(),
             onAdd: (txn) async {
               await ref.read(transactionsControllerProvider).addTransaction(txn);
               if (context.mounted) {

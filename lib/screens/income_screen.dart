@@ -76,7 +76,6 @@ class IncomeScreen extends ConsumerWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => AddIncomeScreen(
-                      categories: categories.where((c) => c.type == CategoryType.income || c.type == CategoryType.both).toList(),
                       onAdd: (txn) {
                         ref.read(transactionsControllerProvider).addTransaction(txn);
                         if (context.mounted) {

@@ -14,13 +14,11 @@ import 'package:image_picker/image_picker.dart'; // Added for transactionsContro
 
 class AddIncomeScreen extends ConsumerStatefulWidget { // Changed to ConsumerStatefulWidget
   final Function(Transaction) onAdd;
-  final List<AppCategory> categories;
   final Function() onAddCategory;
 
   const AddIncomeScreen({
     super.key,
     required this.onAdd,
-    required this.categories,
     required this.onAddCategory,
   });
 
@@ -91,9 +89,13 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> { // Changed 
 
   @override
   Widget build(BuildContext context) {
+    final categoriesAsync = ref.watch(categoriesProvider);
+    final dbCategories = categoriesAsync.asData?.value ?? [];
+    final incomeCategories = dbCategories.where((c) => c.type == CategoryType.income || c.type == CategoryType.both).toList();
+
     // Combine existing categories with defaults if they are missing (Deduplicated)
     final Map<String, AppCategory> unique = {};
-    final all = [...widget.categories, ..._defaultIncomeCategories];
+    final all = [...incomeCategories, ..._defaultIncomeCategories];
     for (var cat in all) {
       final key = cat.name.toLowerCase().trim();
       if (!unique.containsKey(key)) {
@@ -121,7 +123,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> { // Changed 
                 // Check if selected category needs creation in database
                 if (_selectedCategoryId != null) {
                   final selectedCat = displayCategories.firstWhere((c) => c.id == _selectedCategoryId);
-                  final alreadyInDb = widget.categories.any((c) => c.id == selectedCat.id);
+                  final alreadyInDb = incomeCategories.any((c) => c.id == selectedCat.id);
                   if (!alreadyInDb) {
                      ref.read(transactionsControllerProvider).addCategory(selectedCat);
                   }
