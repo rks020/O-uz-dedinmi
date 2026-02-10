@@ -1,6 +1,7 @@
+import 'transaction_options.dart';
+
 enum TransactionType { income, expense }
 enum TransactionStatus { pending, paid, overdue }
-enum RepeatFrequency { never, monthly, weekly, yearly }
 
 class Transaction {
   final String id;
@@ -12,10 +13,11 @@ class Transaction {
   final String categoryId; // Reference to Category ID
   final String? iconPath; // Optional path for svg or resource
   final String? description;
-  final RepeatFrequency repeat;
+  final RecurrenceType repeat;
   final bool isFinite;
   final DateTime? endDate;
   final bool notificationEnabled;
+  final String currencyCode;
 
   Transaction({
     required this.id,
@@ -27,10 +29,11 @@ class Transaction {
     required this.categoryId,
     this.iconPath,
     this.description,
-    this.repeat = RepeatFrequency.never,
+    this.repeat = RecurrenceType.once,
     this.isFinite = false,
     this.endDate,
     this.notificationEnabled = false,
+    this.currencyCode = 'TRY',
   });
 
   Map<String, dynamic> toMap() {
@@ -48,6 +51,7 @@ class Transaction {
       'isFinite': isFinite,
       'endDate': endDate?.toIso8601String(),
       'notificationEnabled': notificationEnabled,
+      'currencyCode': currencyCode,
     };
   }
 
@@ -68,13 +72,14 @@ class Transaction {
       categoryId: map['categoryId'] ?? '',
       iconPath: map['iconPath'],
       description: map['description'],
-      repeat: RepeatFrequency.values.firstWhere(
+      repeat: RecurrenceType.values.firstWhere(
         (e) => e.name == map['repeat'],
-        orElse: () => RepeatFrequency.never,
+        orElse: () => RecurrenceType.once,
       ),
       isFinite: map['isFinite'] ?? false,
       endDate: map['endDate'] != null ? DateTime.tryParse(map['endDate']) : null,
       notificationEnabled: map['notificationEnabled'] ?? false,
+      currencyCode: map['currencyCode'] ?? 'TRY',
     );
   }
 }

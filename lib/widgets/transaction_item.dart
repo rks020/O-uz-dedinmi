@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/transaction.dart';
+import '../models/transaction_options.dart';
 import '../theme/app_theme.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../providers/data_provider.dart';
@@ -45,7 +46,8 @@ class TransactionItem extends ConsumerWidget {
     }
 
     final dateFormat = DateFormat('d MMM', 'tr_TR');
-    final amountFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+    final amountSymbol = AppCurrency.getSymbol(transaction.currencyCode);
+    final amountFormat = NumberFormat.currency(locale: 'tr_TR', symbol: amountSymbol, decimalDigits: 0);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

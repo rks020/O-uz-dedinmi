@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../models/transaction.dart';
 import '../../models/category.dart';
+import '../../models/transaction_options.dart';
+import '../theme/app_theme.dart';
+import 'currency_selection_screen.dart';
+import 'recurrence_selection_screen.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final Function(Transaction) onAdd;
@@ -21,13 +26,45 @@ class AddExpenseScreen extends StatefulWidget {
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
-  DateTime _date = DateTime.now();
   TransactionStatus _status = TransactionStatus.pending;
-  RepeatFrequency _repeat = RepeatFrequency.never;
+  RecurrenceType _repeat = RecurrenceType.once;
   bool _isFinite = false;
   DateTime _startDate = DateTime.now();
   bool _notificationsEnabled = true;
   String? _selectedCategoryId;
+  String _currencyCode = 'TRY';
+
+  void _showCurrencyPicker() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CurrencySelectionScreen(
+          selectedCurrencyCode: _currencyCode,
+          onSelected: (currency) {
+            setState(() {
+              _currencyCode = currency.code;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showRecurrencePicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => RecurrenceSelectionScreen(
+        selectedRecurrence: _repeat,
+        onSelected: (type) {
+          setState(() {
+            _repeat = type;
+          });
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,16 +72,16 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       backgroundColor: Colors.black, // Dark background
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: const Text('Yeni Gider Ekle', style: TextStyle(color: Colors.white)),
+        elevation: 0,
+        title: const Text('Yeni Gider Ekle', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         leading: TextButton(
-          child: const Text('İptal', style: TextStyle(color: Colors.blue)),
+          child: const Text('İptal', style: TextStyle(color: AppTheme.primaryColor)),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           TextButton(
-            child: const Text('Kaydet', style: TextStyle(color: Colors.grey)),
+            child: const Text('Kaydet', style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold)),
             onPressed: () {
-              // Validate and save
               if (_titleController.text.isNotEmpty && _amountController.text.isNotEmpty) {
                 final transaction = Transaction(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -57,6 +94,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                   repeat: _repeat,
                   isFinite: _isFinite,
                   notificationEnabled: _notificationsEnabled,
+                  currencyCode: _currencyCode,
                 );
                 widget.onAdd(transaction);
                 Navigator.pop(context);
@@ -70,42 +108,53 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('GİDER DETAYLARI', style: TextStyle(color: Colors.grey, fontSize: 12)),
-            const SizedBox(height: 8),
+            const Text('GİDER DETAYLARI', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            const SizedBox(height: 12),
             _buildTextField('Gider Adı', _titleController),
             const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(child: _buildTextField('Gider Tutarı', _amountController, isNumber: true)),
                 const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Row(
-                    children: [
-                      Text('TRY', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                      Icon(Icons.chevron_right, color: Colors.white, size: 16),
-                    ],
+                GestureDetector(
+                  onTap: _showCurrencyPicker,
+                  child: Container(
+                    height: 56, // Match TextField height
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(_currencyCode, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.chevron_right, color: Colors.white, size: 18),
+                      ],
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-            const Text('TARİH VE TEKRAR', style: TextStyle(color: Colors.grey, fontSize: 12)),
-            const SizedBox(height: 8),
+            const Text('TARİH VE TEKRAR', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            const SizedBox(height: 12),
             _buildListTile(
               icon: Icons.repeat,
               title: 'Tekrar',
-              trailing: Text(
-                _repeat.name == 'never' ? 'Asla' : _repeat.name,
-                style: const TextStyle(color: Colors.white),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _repeat.label,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right, color: Colors.grey, size: 16),
+                ],
               ),
-              onTap: () {
-                // Show repeat picker
-              },
+              onTap: _showRecurrencePicker,
             ),
             _buildListTile(
               icon: Icons.timer,
@@ -113,32 +162,63 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               trailing: Switch(
                 value: _isFinite,
                 onChanged: (val) => setState(() => _isFinite = val),
-                activeColor: Colors.blue,
+                 activeColor: AppTheme.primaryColor,
               ),
             ),
             _buildListTile(
               icon: Icons.calendar_today,
               title: 'Başlangıç tarihi',
-              trailing: Text(
-                "${_startDate.day} ${_startDate.month} ${_startDate.year}",
-                style: const TextStyle(color: Colors.white),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    DateFormat('d MMM yyyy', 'tr_TR').format(_startDate),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_right, color: Colors.grey, size: 16),
+                ],
               ),
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _startDate,
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: const ColorScheme.dark(
+                          primary: AppTheme.primaryColor,
+                          onPrimary: Colors.white,
+                          surface: AppTheme.surfaceColor,
+                          onSurface: Colors.white,
+                        ),
+                      ),
+                      child: child!,
+                    );
+                  },
+                );
+                if (picked != null) {
+                  setState(() => _startDate = picked);
+                }
+              },
             ),
             const SizedBox(height: 24),
-            const Text('ÖDEME SEÇENEKLERİ', style: TextStyle(color: Colors.grey, fontSize: 12)),
-            const SizedBox(height: 8),
+            const Text('ÖDEME SEÇENEKLERİ', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            const SizedBox(height: 12),
             _buildListTile(
-              icon: Icons.notifications,
+              icon: Icons.notifications_none,
               title: 'Ödeme Bildirimleri',
               trailing: Switch(
                 value: _notificationsEnabled,
                 onChanged: (val) => setState(() => _notificationsEnabled = val),
-                 activeColor: Colors.blue,
+                 activeColor: AppTheme.primaryColor,
               ),
             ),
             const SizedBox(height: 24),
-            const Text('KATEGORİ', style: TextStyle(color: Colors.grey, fontSize: 12)),
-            const SizedBox(height: 8),
+            const Text('KATEGORİ', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -146,10 +226,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 ...widget.categories.map((cat) => _buildCategoryChip(cat)),
                 ActionChip(
                   label: const Text('Ekle'),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   avatar: const Icon(Icons.add, size: 16, color: Colors.white),
-                  backgroundColor: Colors.blue,
-                  labelStyle: const TextStyle(color: Colors.white),
+                  backgroundColor: AppTheme.primaryColor,
+                  labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   onPressed: widget.onAddCategory,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
               ],
             ),
@@ -162,13 +244,14 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   Widget _buildTextField(String hint, TextEditingController controller, {bool isNumber = false}) {
     return TextField(
       controller: controller,
-      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : TextInputType.text,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.grey),
         filled: true,
         fillColor: const Color(0xFF1E1E1E),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -188,12 +271,12 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.2),
+            color: AppTheme.primaryColor.withOpacity(0.15),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: Colors.blue, size: 20),
+          child: Icon(icon, color: AppTheme.primaryColor, size: 20),
         ),
-        title: Text(title, style: const TextStyle(color: Colors.white)),
+        title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 15)),
         trailing: trailing,
         onTap: onTap,
       ),
@@ -211,15 +294,19 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         });
       },
       backgroundColor: const Color(0xFF1E1E1E),
-      selectedColor: Colors.blue.withOpacity(0.5),
-      labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.grey),
+      selectedColor: AppTheme.primaryColor.withOpacity(0.3),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : Colors.grey,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
       avatar: CircleAvatar(
         backgroundColor: Color(category.colorValue),
-        radius: 8,
+        radius: 6,
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: isSelected ? Colors.blue : Colors.grey.withOpacity(0.3)),
+        side: BorderSide(color: isSelected ? AppTheme.primaryColor : Colors.white.withOpacity(0.1)),
       ),
     );
   }
