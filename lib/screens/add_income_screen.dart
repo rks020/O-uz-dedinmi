@@ -257,7 +257,19 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> { // Changed 
             ),
             const SizedBox(height: 16),
             GestureDetector(
-              onTap: widget.onAddCategory,
+              onTap: () {
+                // Modified to show dialog directly instead of calling widget.onAddCategory
+                showDialog(
+                  context: context,
+                  builder: (context) => AddCategoryDialog(
+                    type: CategoryType.income, // Explicitly set type to income
+                    onAdd: (category) {
+                       // Add category via provider
+                       ref.read(transactionsControllerProvider).addCategory(category);
+                    },
+                  ),
+                );
+              },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(

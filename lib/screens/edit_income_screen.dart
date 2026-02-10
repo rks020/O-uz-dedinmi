@@ -244,6 +244,7 @@ class _EditIncomeScreenState extends ConsumerState<EditIncomeScreen> {
                 showDialog(
                   context: context,
                   builder: (context) => AddCategoryDialog(
+                    type: CategoryType.income,
                     onAdd: (category) {
                       ref.read(transactionsControllerProvider).addCategory(category);
                     },

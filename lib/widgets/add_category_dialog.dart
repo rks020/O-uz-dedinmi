@@ -4,8 +4,13 @@ import '../../models/category.dart';
 
 class AddCategoryDialog extends StatefulWidget {
   final Function(AppCategory) onAdd;
+  final CategoryType type;
 
-  const AddCategoryDialog({super.key, required this.onAdd});
+  const AddCategoryDialog({
+    super.key,
+    required this.onAdd,
+    this.type = CategoryType.expense,
+  });
 
   @override
   State<AddCategoryDialog> createState() => _AddCategoryDialogState();
@@ -14,12 +19,21 @@ class AddCategoryDialog extends StatefulWidget {
 class _AddCategoryDialogState extends State<AddCategoryDialog> {
   final TextEditingController _nameController = TextEditingController();
   int _selectedColor = 0xFFF44336; // Default red
+
   final List<int> _colors = [
     0xFFF44336, 0xFFE91E63, 0xFF9C27B0, 0xFF673AB7, 0xFF3F51B5, 0xFF2196F3,
     0xFF03A9F4, 0xFF00BCD4, 0xFF009688, 0xFF4CAF50, 0xFF8BC34A, 0xFFCDDC39,
     0xFFFFEB3B, 0xFFFFC107, 0xFFFF9800, 0xFFFF5722, 0xFF795548, 0xFF9E9E9E,
     0xFF607D8B, 0xFFFFFFFF,
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.type == CategoryType.income) {
+      _selectedColor = 0xFF4CAF50; // Default green for income
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,9 +49,9 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Yeni Gider Kategorisi',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  widget.type == CategoryType.income ? 'Yeni Gelir Kategorisi' : 'Yeni Gider Kategorisi',
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close, color: Colors.grey),
@@ -90,7 +104,7 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
                     id: DateTime.now().millisecondsSinceEpoch.toString(),
                     name: _nameController.text,
                     colorValue: _selectedColor,
-                    type: CategoryType.expense,
+                    type: widget.type,
                   );
                   widget.onAdd(newCategory);
                   Navigator.pop(context);
@@ -108,3 +122,4 @@ class _AddCategoryDialogState extends State<AddCategoryDialog> {
     );
   }
 }
+
