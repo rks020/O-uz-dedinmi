@@ -8,11 +8,11 @@ import '../services/auth_service.dart';
 final databaseServiceProvider = Provider<DatabaseService>((ref) {
   final authUser = ref.watch(authStateProvider).value;
   if (authUser == null) {
-    // If not logged in, we return a dummy or handle it in the consumer.
-    // Given the AuthWrapper, this provider will only be active when logged in.
     return DatabaseService('guest'); 
   }
-  return DatabaseService(authUser.uid);
+  final dbService = DatabaseService(authUser.uid);
+  dbService.initializeCategories(); // Trigger category initialization
+  return dbService;
 });
 
 final transactionsProvider = StreamProvider<List<Transaction>>((ref) {

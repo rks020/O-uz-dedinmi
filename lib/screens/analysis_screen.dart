@@ -289,37 +289,131 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   }
 
   Widget _buildCategoriesSection(AsyncValue<List<Transaction>> transactionsAsync, AsyncValue<List<AppCategory>> categoriesAsync) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return transactionsAsync.when(
+      data: (transactions) {
+        final currentMonthTransactions = transactions.where((t) {
+          final selectedDate = ref.watch(selectedDateProvider);
+          return t.date.year == selectedDate.year && t.date.month == selectedDate.month;
+        }).toList();
+
+        final categories = categoriesAsync.value ?? [];
+        
+        final expenseTransactions = currentMonthTransactions.where((t) => t.type == TransactionType.expense).toList();
+        final incomeTransactions = currentMonthTransactions.where((t) => t.type == TransactionType.income).toList();
+
+        if (currentMonthTransactions.isEmpty) {
+          return const Center(child: Text('Henüz veri girişi yapılmamış.', style: TextStyle(color: Colors.grey)));
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(width: 4, height: 16, color: Colors.blue),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Öne Çıkan Kategoriler',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  Row(
+                    children: [
+                      Container(width: 4, height: 16, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Öne Çıkan Kategoriler',
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const Icon(Icons.ios_share, color: Colors.blue, size: 20),
+              const SizedBox(height: 24),
+              if (expenseTransactions.isNotEmpty) ...[
+                const Text('Giderler', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 16),
+                ..._buildCategoryList(expenseTransactions, categories),
+                const SizedBox(height: 24),
+              ],
+              if (incomeTransactions.isNotEmpty) ...[
+                const Text('Gelirler', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 16),
+                ..._buildCategoryList(incomeTransactions, categories),
+              ],
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.ios_share, color: Colors.blue, size: 20),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 24),
-          const Center(
-            child: Text(
-              'Henüz veri girişi yapılmamış.',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Hata: $err')),
     );
+  }
+
+  List<Widget> _buildCategoryList(List<Transaction> transactions, List<AppCategory> categories) {
+    final Map<String, double> categoryTotals = {};
+    double totalAmount = 0;
+
+    for (var t in transactions) {
+      categoryTotals[t.categoryId] = (categoryTotals[t.categoryId] ?? 0) + t.amount;
+      totalAmount += t.amount;
+    }
+
+    final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+
+    return categoryTotals.entries.map((entry) {
+      final category = categories.firstWhere(
+        (c) => c.id == entry.key,
+        orElse: () => AppCategory(id: 'other', name: 'Diğer', colorValue: Colors.grey.value, type: CategoryType.both),
+      );
+      final percentage = (entry.value / totalAmount * 100).toInt();
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: Color(category.colorValue),
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '$percentage%',
+                style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              category.name,
+              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+            ),
+            const Spacer(),
+            Text(
+              currencyFormat.format(entry.value),
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      );
+    }).toList();
   }
 
   Widget _buildMonthButton(String label, VoidCallback onTap, {required bool isPrev}) {

@@ -106,6 +106,22 @@ class DatabaseService {
   }
 
   Future<void> initializeCategories() async {
-    // Optional: Seed default categories if needed
+    final snapshot = await _userRef.child('categories').get();
+    if (snapshot.exists) return;
+
+    final List<Map<String, dynamic>> defaultCategories = [
+      // Income
+      {'id': 'inc_maas', 'name': 'Maaş', 'colorValue': 0xFFF59E0B, 'type': 'income'},
+      {'id': 'inc_bonus', 'name': 'Bonus', 'colorValue': 0xFF10B981, 'type': 'income'},
+      {'id': 'inc_diger', 'name': 'Diğer', 'colorValue': 0xFF6B7280, 'type': 'income'},
+      // Expense
+      {'id': 'exp_kira', 'name': 'Kira', 'colorValue': 0xFFEF4444, 'type': 'expense'},
+      {'id': 'exp_market', 'name': 'Market', 'colorValue': 0xFF3B82F6, 'type': 'expense'},
+      {'id': 'exp_faturalar', 'name': 'Faturalar', 'colorValue': 0xFF8B5CF6, 'type': 'expense'},
+    ];
+
+    for (var cat in defaultCategories) {
+      await _userRef.child('categories').child(cat['id']).set(cat);
+    }
   }
 }
