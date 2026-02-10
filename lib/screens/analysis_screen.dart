@@ -168,93 +168,127 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   }
 
   Widget _buildChartSection(AsyncValue<List<Transaction>> transactionsAsync) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return transactionsAsync.when(
+      data: (transactions) {
+        final selectedDate = ref.watch(selectedDateProvider);
+        final List<BarChartGroupData> barGroups = [];
+        double maxVal = 1000; // Minimum scale
+
+        // Calculate for the last 6 months ending at selectedDate
+        for (int i = 5; i >= 0; i--) {
+          final monthDate = DateTime(selectedDate.year, selectedDate.month - i);
+          final monthTransactions = transactions.where((t) =>
+              t.date.year == monthDate.year && t.date.month == monthDate.month);
+
+          final income = monthTransactions
+              .where((t) => t.type == TransactionType.income)
+              .fold(0.0, (sum, t) => sum + t.amount);
+          
+          final expense = monthTransactions
+              .where((t) => t.type == TransactionType.expense)
+              .fold(0.0, (sum, t) => sum + t.amount);
+
+          if (income > maxVal) maxVal = income;
+          if (expense > maxVal) maxVal = expense;
+
+          barGroups.add(_makeBarGroup(5 - i, income, expense));
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(width: 4, height: 16, color: Colors.blue),
-              const SizedBox(width: 8),
-              const Text(
-                'Trend Özeti',
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 200,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: 66000,
-                barTouchData: BarTouchData(enabled: false),
-                titlesData: FlTitlesData(
-                  show: true,
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        const style = TextStyle(color: Colors.grey, fontSize: 12);
-                        String text = '';
-                        switch (value.toInt()) {
-                          case 0: text = 'Eyl'; break;
-                          case 1: text = 'Eki'; break;
-                          case 2: text = 'Kas'; break;
-                          case 3: text = 'Ara'; break;
-                          case 4: text = 'Oca'; break;
-                          case 5: text = 'Şub'; break;
-                        }
-                        return SideTitleWidget(meta: meta, child: Text(text, style: style));
-                      },
-                    ),
+              Row(
+                children: [
+                  Container(width: 4, height: 16, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Trend Özeti',
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40,
-                      getTitlesWidget: (value, meta) {
-                        return Text('${(value / 1000).toInt()}K', style: const TextStyle(color: Colors.grey, fontSize: 10));
-                      },
-                      interval: 13000,
-                    ),
-                  ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: Colors.white.withOpacity(0.05),
-                    strokeWidth: 1,
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                barGroups: [
-                  _makeBarGroup(0, 0, 0),
-                  _makeBarGroup(1, 0, 0),
-                  _makeBarGroup(2, 0, 0),
-                  _makeBarGroup(3, 0, 0),
-                  _makeBarGroup(4, 0, 0),
-                  _makeBarGroup(5, 0, 56000), // February data
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLegendItem(AppTheme.incomeGreen, 'Gelirler'),
-              const SizedBox(width: 24),
-              _buildLegendItem(AppTheme.expenseRed, 'Giderler'),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 220,
+                child: BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    maxY: maxVal * 1.2, // 20% padding
+                    barTouchData: BarTouchData(
+                      touchTooltipData: BarTouchTooltipData(
+                        getTooltipColor: (_) => AppTheme.surfaceColor,
+                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                          return BarTooltipItem(
+                            rod.toY.toInt().toString() + '₺',
+                            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          );
+                        },
+                      ),
+                    ),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (value, meta) {
+                            final index = value.toInt();
+                            if (index < 0 || index > 5) return const SizedBox();
+                            
+                            // Get month relative to selectedDate
+                            final targetDate = DateTime(selectedDate.year, selectedDate.month - (5 - index));
+                            final text = DateFormat('MMM', 'tr_TR').format(targetDate);
+                            
+                            return SideTitleWidget(
+                              meta: meta, 
+                              child: Text(text, style: const TextStyle(color: Colors.grey, fontSize: 12))
+                            );
+                          },
+                        ),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 40,
+                          getTitlesWidget: (value, meta) {
+                            if (value == 0) return const Text('0', style: TextStyle(color: Colors.grey, fontSize: 10));
+                            return Text('${(value / 1000).toInt()}K', style: const TextStyle(color: Colors.grey, fontSize: 10));
+                          },
+                          interval: maxVal > 0 ? (maxVal * 1.2) / 4 : 1000,
+                        ),
+                      ),
+                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    ),
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      getDrawingHorizontalLine: (value) => FlLine(
+                        color: Colors.white.withOpacity(0.05),
+                        strokeWidth: 1,
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    barGroups: barGroups,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLegendItem(AppTheme.incomeGreen, 'Gelirler'),
+                  const SizedBox(width: 24),
+                  _buildLegendItem(AppTheme.expenseRed, 'Giderler'),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
+        );
+      },
+      loading: () => const SizedBox(height: 200, child: Center(child: CircularProgressIndicator())),
+      error: (_, __) => const SizedBox(height: 200, child: Center(child: Text('Veri yüklenemedi'))),
     );
   }
 
