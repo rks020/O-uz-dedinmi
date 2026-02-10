@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:ui' as ui;
 
 class SankeyFlowChart extends StatefulWidget {
   final double income;
@@ -215,7 +216,7 @@ class FlowPainter extends CustomPainter {
     final tp = TextPainter(
       text: span,
       textAlign: alignRight ? TextAlign.right : TextAlign.left,
-      textDirection: TextDirection.ltr,
+      textDirection: ui.TextDirection.ltr,
     );
     tp.layout();
     
